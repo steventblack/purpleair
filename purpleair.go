@@ -47,8 +47,7 @@ type PrivateInfo struct {
 // reference available on the sensor device. Several calls provide flexibility on accepting
 // either a SensorIndex or SensorID, so providing an abstraction helps reduce redundancy.
 type GroupMember interface {
-	CreateMember(groupID GroupID)
-	DeleteMember(groupID GroupID)
+	AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error)
 }
 
 // KeyTypes as returned from PurpleAir.
@@ -70,7 +69,7 @@ const (
 const (
 	urlKeys    string = "https://api.purpleair.com/v1/keys"
 	urlGroups  string = "https://api.purpleair.com/v1/groups"
-	urlMembers string = "https://api.purpleair.com/v1/groups/%s/members"
+	urlMembers string = "https://api.purpleair.com/v1/groups/%d/members"
 )
 
 // apiKeyHeader is the HTTP Request header used to pass in the access key value.
@@ -157,7 +156,7 @@ func CreateGroup(g string) (GroupID, error) {
 
 	req, err := setupCall(http.MethodPost, urlGroups, reqJSON)
 	if err != nil {
-		log.Printf("Unable to call API: %s\n", err)
+		log.Printf("Unable to setup call: %s\n", err)
 		return 0, err
 	}
 
@@ -202,6 +201,21 @@ func DeleteGroup(g GroupID) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		groupResp := struct {
+			E string `json:"error"`
+		}{}
+
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(&groupResp)
+		if err != nil {
+			log.Printf("Unable to decode HTTP response: %s\n", err)
+			return err
+		}
+
+		return errors.New(groupResp.E)
+	}
 
 	return nil
 }
@@ -271,16 +285,99 @@ func GroupDetails(g GroupID) ([]Member, error) {
 	return memberResp.Members, nil
 }
 
-func (s SensorIndex) CreateMember(g GroupID) error {
+func (s SensorIndex) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
+	reqBody := struct {
+		S SensorIndex `json:"sensor_index"`
+		E string      `json:"owner_email,omitempty"`
+		L Location    `json:"location_type,omitempty"`
+	}{S: s}
+
+	// If private info supplied, update the struct to include those components
+	if pi != nil {
+		reqBody.E = pi[0].Email
+		reqBody.L = pi[0].Loc
+	}
+
+	reqJSON, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Printf("Unable to marshal json body: %s\n", err)
+		return 0, err
+	}
+
+	return addMember(g, reqJSON)
 }
 
-func (s SensorID) CreateMember(g GroupID) error {
+func (s SensorID) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
+	reqBody := struct {
+		S SensorID `json:"sensor_id"`
+		E string   `json:"owner_email,omitempty"`
+		L Location `json:"location_type,omitempty"`
+	}{S: s}
+
+	// If private info supplied, update the struct to include those components
+	if pi != nil {
+		reqBody.E = pi[0].Email
+		reqBody.L = pi[0].Loc
+	}
+
+	reqJSON, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Printf("Unable to marshal json body: %s\n", err)
+		return 0, err
+	}
+
+	return addMember(g, reqJSON)
 }
 
-func (s SensorIndex) DeleteMember(g GroupID) error {
+// addMember is the private function for handling the common code for create a member.
+// Both the SensorID and SensorIndex versions of AddMember rely on this.
+func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
+	url := fmt.Sprintf(urlMembers, g)
+	req, err := setupCall(http.MethodPost, url, reqJSON)
+	if err != nil {
+		log.Printf("Unable to setup call: %s\n", err)
+		return 0, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Unable to execute HTTP request: %s\n", err)
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	memberResp := struct {
+		M MemberID `json:"member_id"`
+	}{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&memberResp)
+	if err != nil {
+		log.Printf("Unable to decode HTTP body: %s\n", err)
+		return 0, err
+	}
+
+	return memberResp.M, nil
 }
 
-func (s SensorID) DeleteMember(g GroupID) error {
+func RemoveMember(m MemberID, g GroupID) error {
+	url := fmt.Sprintf(urlMembers+"/%d", g, m)
+	req, err := setupCall(http.MethodDelete, url, nil)
+	if err != nil {
+		log.Printf("Unable to setup API call: %s\n", err)
+		return err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Unable to execute HTTP request: %s\n", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
 
 // setupCall performs common tasks that are prerequisite before calling the API.
@@ -312,79 +409,6 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 }
 
 /*
-
-// Location of a sensor. Must be inside or outside.
-type Location int
-
-// SensorIndex is the PurpleAir internal reference to a sensor.
-// SensorID is the value provided on the sensor's label.
-// For sensors marked as private, the owner's email and proper location setting must also be specified.
-type SensorID string
-
-// Private sensor info used to identify/validate access to sensors which are marked as private.
-// Used in conjunction with either a SensorID or SensorIndex value.
-type PrivateSensorInfo struct {
-	Email string
-	Loc   Location
-}
-
-// Add the specified sensor to the group using the SensorIndex (PurpleAir's internal reference value).
-// If the sensor is private, then the PrivateSensorInfo struct must be supplied.
-// Access requires a valid write key. Be sure to SetAPIKey prior to calling.
-// Returns the member ID assigned to the sensor upon success or an error if a problem was encountered.
-// Example for public sensor:
-//   AddSensorByIndex(gID, sIdx)
-// Example for private sensor:
-//   AddSensorByIndex(gID, sIdx, PrivateSensorInfo{ Email: "me@example.com", Loc: Outside })
-func AddSensorByIndex(group GroupID, sensor SensorIndex, privInfo ...PrivateSensorInfo) (MemberID, error) {
-	// private type for generating the json body of the request
-	type reqBody struct {
-		Sensor SensorIndex `json:"sensor_index"`
-		Email  string      `json:"owner_email,omitempty"`
-		Loc    Location    `json:"location_type,omitempty"`
-	}
-
-	var body reqBody
-	switch len(privInfo) {
-	case 0:
-		body.Sensor = sensor
-	case 1:
-		body.Sensor = sensor
-		body.Email = privInfo[0].Email
-		body.Loc = privInfo[0].Loc
-	default:
-	}
-
-	return nil, nil
-}
-
-// Add the specified sensor to the group using the SensorID (Available on the sensor's label).
-// If the sensor is private, then the PrivateSensorInfo struct must be supplied.
-// Access requires a valid write key. Be sure to SetAPIKey prior to calling.
-// Returns the member ID assigned to the sensor upon success or an error if a problem was encountered.
-func AddSensorByID(group GroupID, sensor SensorID, privInfo ...PrivateSensorInfo) (MemberID, error) {
-	// private type for generating the json body of the request
-	type reqBody struct {
-		Sensor SensorID `json:"sensor_id"`
-		Email  string   `json:"owner_email, omitempty"`
-		Loc    Location `json:"location_type, omitempty"`
-	}
-	switch len(privInfo) {
-	case 0:
-
-	case 1:
-	default:
-	}
-
-	return nil, nil
-}
-
-// Delete the specified member from the group.
-// Access requires a valid write key. Be sure to SetAPIKey prior to calling.
-// Returns an error if a problem was encountered.
-func DeleteMember(group GroupID, member MemberID) error {
-	return nil
-}
 
 type StationInfo struct {
 	Name               string
