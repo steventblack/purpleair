@@ -377,6 +377,21 @@ func RemoveMember(m MemberID, g GroupID) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusNoContent {
+		groupResp := struct {
+			E string `json:"error"`
+		}{}
+
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(&groupResp)
+		if err != nil {
+			log.Printf("Unable to decode HTTP response: %s\n", err)
+			return err
+		}
+
+		return errors.New(groupResp.E)
+	}
+
 	return nil
 }
 
