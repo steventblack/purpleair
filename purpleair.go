@@ -16,12 +16,15 @@ var (
 	apiWriteKey string
 )
 
-type KeyType string  // maps the response from PurpleAir when checking the validity and permissions
-type SensorIndex int // uniquely identifies a sensor within the PurpleAir service
-type SensorID string // unique identifier of a sensor found on its label
-type GroupID int     // unique identifier of a collection of sensors within the PurpleAir service
-type MemberID int    // unique identifier of a sensor within a specific group defined in the PurpleAir service
-type Location int    // enables typechecking on defined location values
+type KeyType string   // maps the response from PurpleAir when checking the validity and permissions
+type SensorIndex int  // uniquely identifies a sensor within the PurpleAir service
+type SensorID string  // unique identifier of a sensor found on its label
+type GroupID int      // unique identifier of a collection of sensors within the PurpleAir service
+type MemberID int     // unique identifier of a sensor within a specific group defined in the PurpleAir service
+type Location int     // enables typechecking on defined location values
+type Privacy int      // setting for a sensor indicating public or private
+type ChannelState int // States for the sensor data channel availability
+type ChannelFlag int  // Flags for the sensor data channels
 
 type Group struct {
 	ID         GroupID `json:"id"`
@@ -50,30 +53,218 @@ type GroupMember interface {
 	AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error)
 }
 
+// SensorParams are options that can be passed in for customizing the sensor information
+// They are all optional.
+type SensorParams struct {
+	Fields   string   `json:"fields,omitempty"`         // which sensor data fields to return
+	Loc      Location `json:"location_type,omitempty"`  // location: inside/outside
+	ReadKeys string   `json:"read_keys,omitempty"`      // key required for access to private devices
+	Show     string   `json:"show_only,omitempty"`      // return data only for sensorIndexes listed
+	Mod      int      `json:"modified_since,omitempty"` // return data only if updated since timestamp
+	MaxAge   int      `json:"max_age,omitempty"`        // return data only if updated within specifed seconds
+	LngNW    float64  `json:"nwlng,omitempty"`          // bounding box: provide NW and SE coordinates
+	LatNW    float64  `json:"nwlat,omitempty"`          // and return sensor info only for devices within the box
+	LngSE    float64  `json:"selng,omitempty"`
+	LatSE    float64  `json:"selat,omitempty"`
+}
+
+// Collection of averaged statistics for the sensor channel
+type SensorStats struct {
+	PM_2_5        float64 `json:"pm2.5"`
+	PM_2_5_10Min  float64 `json:"pm2.5_10minute"`
+	PM_2_5_30Min  float64 `json:"pm2.5_30minute"`
+	PM_2_5_60Min  float64 `json:"pm2.5_60minute"`
+	PM_2_5_6Hour  float64 `json:"pm2.5_6hour"`
+	PM_2_5_24Hour float64 `json:"pm2.5_24hour"`
+	PM_2_5_1Week  float64 `json:"pm2.5_1week"`
+	Timestamp     int     `json:"time_stamp"`
+}
+
+// SensorInfo is the data response to a sensor query.
+// Not all fields may be available depending on the query fields specified or hardware capabilities.
+type SensorInfo struct {
+	Index           SensorIndex  `json:"sensor_index"`
+	Icon            int          `json"icon"`
+	Name            string       `json:"name"`
+	Private         Privacy      `json:"private"`
+	Loc             Location     `json:"location_type"`
+	Lat             float64      `json:"latitude"`
+	Lng             float64      `json:"longitude"`
+	Alt             int          `json:"altitude"`
+	Pos             int          `json:"position_rating"`
+	Model           string       `json:"model"`
+	Hardware        string       `json:"hardware"`
+	FirmVersion     string       `json:"firmware_version"`
+	FirmUpgrade     string       `json:"firmware_upgrade"`
+	RSSI            int          `json:"rssi"`
+	Uptime          int          `json:"uptime"`
+	Latency         int          `json:"pa_latency"`
+	Memory          int          `json:"memory"`
+	LED             int          `json:"led_brightness"`
+	ChnlState       ChannelState `json:"channel_state"`
+	ChnlFlags       ChanneFlag   `json:"channel_flags"`
+	ChnlManual      ChannelFlag  `json:"channel_flags_manual"`
+	ChnlAuto        ChannelFlag  `json:"channel_flags_auto"`
+	Cfdnc           int          `json:"confidence"`
+	CfdncManual     int          `json:"confidence_manual"`
+	CfdncAuto       int          `json:"confidence_auto"`
+	Mod             int          `json:"last_modifed"`
+	Created         int          `json:"date_created"`
+	PM_1_0          float64      `json:"pm1.0"`
+	PM_1_0_A        float64      `json:"pm1.0_a"`
+	PM_1_0_B        float64      `json:"pm1.0_b"`
+	PM_1_0_Atm      float64      `json:"pm1.0_atm"`
+	PM_1_0_Atm_A    float64      `json:"pm1.0_atm_a"`
+	PM_1_0_Atm_B    float64      `json:"pm1.0_atm_b"`
+	PM_1_0_Cf_1     float64      `json:"pm1.0_cf_1"`
+	PM_1_0_Cf_1_A   float64      `json:"pm1.0_cf_1_a"`
+	PM_1_0_Cf_1_B   float64      `json:"pm1.0_cf_1_b"`
+	PM_2_5_Alt      float64      `json:"pm2.5_alt"`
+	PM_2_5_Alt_A    float64      `json:"pm2.5_alt_a"`
+	PM_2_5_Alt_B    float64      `json:"pm2.5_alt_b"`
+	PM_2_5          float64      `json:"pm2.5"`
+	PM_2_5_A        float64      `json:"pm2.5_a"`
+	PM_2_5_B        float64      `json:"pm2.5_b"`
+	PM_2_5_Atm      float64      `json:"pm2.5_atm"`
+	PM_2_5_Atm_A    float64      `json:"pm2.5_atm_a"`
+	PM_2_5_Atm_B    float64      `json:"pm2.5_atm_b"`
+	PM_2_5_Cf_1     float64      `json:"pm2.5_cf_1"`
+	PM_2_5_Cf_1_A   float64      `json:"pm2.5_cf_1_a"`
+	PM_2_5_Cf_1_B   float64      `json:"pm2.5_cf_1_b"`
+	PM_2_5_10Min    float64      `json:"pm2.5_10minute"`
+	PM_2_5_10Min_A  float64      `json:"pm2.5_10minute_a"`
+	PM_2_5_10Min_B  float64      `json:"pm2.5_10minute_b"`
+	PM_2_5_30Min    float64      `json:"pm2.5_30minute"`
+	PM_2_5_30Min_A  float64      `json:"pm2.5_30minute_a"`
+	PM_2_5_30Min_B  float64      `json:"pm2.5_30minute_b"`
+	PM_2_5_60Min    float64      `json:"pm2.5_60minute"`
+	PM_2_5_60Min_A  float64      `json:"pm2.5_60minute_a"`
+	PM_2_5_60Min_B  float64      `json:"pm2.5_60minute_b"`
+	PM_2_5_6Hour    float64      `json:"pm2.5_6hour"`
+	PM_2_5_6Hour_A  float64      `json:"pm2.5_6hour_a"`
+	PM_2_5_6Hour_B  float64      `json:"pm2.5_6hour_b"`
+	PM_2_5_24Hour   float64      `json:"pm2.5_24hour"`
+	PM_2_5_24Hour_A float64      `json:"pm2.5_24hour_a"`
+	PM_2_5_24Hour_B float64      `json:"pm2.5_24hour_b"`
+	PM_2_5_1Week    float64      `json:"pm2.5_1week"`
+	PM_2_5_1Week_A  float64      `json:"pm2.5_1week_a"`
+	PM_2_5_1Week_B  float64      `json:"pm2.5_1week_b"`
+	PM_10_0         float64      `json:"pm10.0"`
+	PM_10_0_A       float64      `json:"pm10.0_a"`
+	PM_10_0_B       float64      `json:"pm10.0_b"`
+	PM_10_0_Atm     float64      `json:"pm10.0_atm"`
+	PM_10_0_Atm_A   float64      `json:"pm10.0_atm_a"`
+	PM_10_0_Atm_B   float64      `json:"pm10.0_atm_b"`
+	PM_10_0_Cf_1    float64      `json:"pm10.0_cf_1"`
+	PM_10_0_Cf_1_A  float64      `json:"pm10.0_cf_1_a"`
+	PM_10_0_Cf_1_B  float64      `json:"pm10.0_cf_1_b"`
+	PC_0_3um        int          `json:"0.3_um_count"`
+	PC_0_3um_A      int          `json:"0.3_um_count_a"`
+	PC_0_3um_B      int          `json:"0.3_um_count_b"`
+	PC_0_5um        int          `json:"0.5_um_count"`
+	PC_0_5um_A      int          `json:"0.5_um_count_a"`
+	PC_0_5um_B      int          `json:"0.5_um_count_b"`
+	PC_1_0um        int          `json:"1.0_um_count"`
+	PC_1_0um_A      int          `json:"1.0_um_count_a"`
+	PC_1_0um_B      int          `json:"1.0_um_count_b"`
+	PC_2_5um        int          `json:"2.5_um_count"`
+	PC_2_5um_A      int          `json:"2.5_um_count_a"`
+	PC_2_5um_B      int          `json:"2.5_um_count_b"`
+	PC_5_0um        int          `json:"5.0_um_count"`
+	PC_5_0um_A      int          `json:"5.0_um_count_a"`
+	PC_5_0um_B      int          `json:"5.0_um_count_b"`
+	PC_10_0um       int          `json:"10.0_um_count"`
+	PC_10_0um_A     int          `json:"10.0_um_count_a"`
+	PC_10_0um_B     int          `json:"10.0_um_count_b"`
+	Stats           SensorStats  `json:"stats"`
+	Stats_A         SensorStats  `json:"stats_a"`
+	Stats_B         SensorStats  `json:"stats_b"`
+	Humidity        int          `json:"humidity"`
+	Humidity_A      int          `json:"humidity_a"`
+	Humidity_B      int          `json:"humidity_b"`
+	Temp            int          `json:"temperature"`
+	Temp_A          int          `json:"temperature_a"`
+	Temp_B          int          `json:"temperature_b"`
+	Pressure        float64      `json:"pressure"`
+	Pressure_A      float64      `json:"pressure_a"`
+	Pressure_B      float64      `json:"pressure_b"`
+	VOC             float64      `json:"voc"`
+	VOC_A           float64      `json:"voc_a"`
+	VOC_B           float64      `json:"voc_b"`
+	Ozone           float64      `json:"ozone1"`
+	AnalogIn        float64      `json:"analog_input"`
+	PrimaryID_A     int          `json:"primary_id_a"`
+	PrimaryKey_A    string       `json:"primary_key_a"`
+	SecondaryID_A   int          `json:"secondary_id_a"`
+	SecondaryKey_A  string       `json:"secondary_key_a"`
+	PrimaryID_B     int          `json:"primary_id_b"`
+	PrimaryKey_B    string       `json:"primary_key_b"`
+	SecondaryID_B   int          `json:"secondary_id_b"`
+	SecondaryKey_B  string       `json:"secondary_key_b"`
+}
+
 // KeyTypes as returned from PurpleAir.
 const (
-	APIKeyUnknown       KeyType = "UNKNOWN"
-	APIKeyRead          KeyType = "READ"
-	APIKeyWrite         KeyType = "WRITE"
-	APIKeyReadDisabled  KeyType = "READ_DISABLED"
-	APIKeyWriteDisabled KeyType = "WRITE_DISABLED"
+	APIKEYUNKNOWN       KeyType = "UNKNOWN"
+	APIKEYREAD          KeyType = "READ"
+	APIKEYWRITE         KeyType = "WRITE"
+	APIKEYREADDISABLED  KeyType = "READ_DISABLED"
+	APIKEYWRITEDISABLED KeyType = "WRITE_DISABLED"
 )
 
 // Defined location values
 const (
-	Outside Location = 0
-	Inside  Location = 1
+	OUTSIDE Location = 0
+	INSIDE  Location = 1
+)
+
+// Defined privacy values
+const (
+	PUBLIC  Privacy = 0
+	PRIVATE Privacy = 1
+)
+
+// Defined channel states
+const (
+	PM_NONE ChannelState = 0 // no PM sensors detected
+	PM_A    ChannelState = 1 // PM sensor only on channel A
+	PM_B    ChannelState = 2 // PM sensor only on channel B
+	PM_ALL  ChannelState = 3 // PM sensors on both channel A & B
+)
+
+// Defined channel flags
+const (
+	NORMAL         ChannelFlag = 0 // no sensors marked as downgraded
+	DOWNGRADED_A   ChannelFlag = 1 // channel A sensors downgraded
+	DOWNGRADED_B   ChannelFlag = 2 // channel B sensors downgraded
+	DOWNGRADED_ALL ChannelFlag = 3 // both channel A & B sensors downgraded
 )
 
 // PurpleAir API paths
 const (
-	urlKeys    string = "https://api.purpleair.com/v1/keys"
-	urlGroups  string = "https://api.purpleair.com/v1/groups"
-	urlMembers string = "https://api.purpleair.com/v1/groups/%d/members"
+	URLKEYS    string = "https://api.purpleair.com/v1/keys"
+	URLGROUPS  string = "https://api.purpleair.com/v1/groups"
+	URLMEMBERS string = "https://api.purpleair.com/v1/groups/%d/members"
+	URLSENSORS string = "https://api.purpleair.com/v1/sensors"
 )
 
-// apiKeyHeader is the HTTP Request header used to pass in the access key value.
-const apiKeyHeader string = "X-API-Key"
+// APIKEYHEADER is the HTTP Request header used to pass in the access key value.
+const APIKEYHEADER string = "X-API-Key"
+
+/*
+type Field string
+
+// Fields for sensor information. Not all fields may be available on all devices.
+// Sensor information can selectively return data for named fields, or all data if omitted.
+const (
+	Fields []Field = {"name", "icon", "model", "hardware", "location_type", "private",
+		"latitude", "longitude", "altitude", "position_rating", "led_brightness",
+		"firmware_version", "firmware_upgrade", "rssi", "uptime", "pa_latency",
+		"memory", "last_seen", "last_modified", "date_created", "channel_state",
+		"channel_flags", "channel_flags_manual", "channel_flags_auto", "confidence",
+		"confidence_manual", "confidence_auto"}
+)
+*/
 
 // SetAPIKey checks the validity and permissions of the provided access key string.
 // If the key is valid, it will be retained by the module for further calls.
@@ -84,13 +275,13 @@ func SetAPIKey(k string) (KeyType, error) {
 	keyType, err := CheckAPIKey(k)
 	if err != nil {
 		log.Printf("Unable to CheckAPIKey: %v\n", err)
-		return APIKeyUnknown, err
+		return APIKEYUNKNOWN, err
 	}
 
-	if keyType == APIKeyRead {
+	if keyType == APIKEYREAD {
 		log.Printf("Successfully set API read key\n")
 		apiReadKey = k
-	} else if keyType == APIKeyWrite {
+	} else if keyType == APIKEYWRITE {
 		log.Printf("Successfully set API write key\n")
 		apiWriteKey = k
 	}
@@ -109,14 +300,14 @@ func CheckAPIKey(k string) (KeyType, error) {
 	}
 	var keyTypeResp checkKeyType
 
-	keyType := APIKeyUnknown
+	keyType := APIKEYUNKNOWN
 
-	req, err := http.NewRequest(http.MethodGet, urlKeys, nil)
+	req, err := http.NewRequest(http.MethodGet, URLKEYS, nil)
 	if err != nil {
 		log.Printf("Unable to create HTTP request: %s\n", err)
 		return keyType, err
 	}
-	req.Header.Add(apiKeyHeader, k)
+	req.Header.Add(APIKEYHEADER, k)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -154,7 +345,7 @@ func CreateGroup(g string) (GroupID, error) {
 		return 0, err
 	}
 
-	req, err := setupCall(http.MethodPost, urlGroups, reqJSON)
+	req, err := setupCall(http.MethodPost, URLGROUPS, reqJSON)
 	if err != nil {
 		log.Printf("Unable to setup call: %s\n", err)
 		return 0, err
@@ -187,7 +378,7 @@ func CreateGroup(g string) (GroupID, error) {
 // This call requires a key with write permissions to be set prior to calling.
 // An error will be returned on failure, or else nil
 func DeleteGroup(g GroupID) error {
-	url := fmt.Sprintf("%s/%d", urlGroups, g)
+	url := fmt.Sprintf("%s/%d", URLGROUPS, g)
 	req, err := setupCall(http.MethodDelete, url, nil)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
@@ -224,7 +415,7 @@ func DeleteGroup(g GroupID) error {
 // This call requires a key with read permissions to be set prior to calling.
 // The list of groups will be returned on success, or else an error.
 func ListGroups() ([]Group, error) {
-	req, err := setupCall(http.MethodGet, urlGroups, nil)
+	req, err := setupCall(http.MethodGet, URLGROUPS, nil)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
 		return nil, err
@@ -256,7 +447,7 @@ func ListGroups() ([]Group, error) {
 // This call requires a key with read permissions to be set prior to calling.
 // The list of members will be returned on success, or else an error.
 func GroupDetails(g GroupID) ([]Member, error) {
-	url := fmt.Sprintf("%s/%d", urlGroups, g)
+	url := fmt.Sprintf("%s/%d", URLGROUPS, g)
 	req, err := setupCall(http.MethodGet, url, nil)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
@@ -285,6 +476,11 @@ func GroupDetails(g GroupID) ([]Member, error) {
 	return memberResp.Members, nil
 }
 
+// AddMember provides the SensorIndex interface solution to adding a sensor to a group.
+// The function takes an optional PrivateInfo struct, which is necessary only if the
+// sensor referenced is a private sensor.
+// This call requires a key with write permissions to be set prior to calling.
+// The MemberID will be returned on success, or else an error.
 func (s SensorIndex) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 	reqBody := struct {
 		S SensorIndex `json:"sensor_index"`
@@ -307,6 +503,11 @@ func (s SensorIndex) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 	return addMember(g, reqJSON)
 }
 
+// AddMember provides the SensorID interface solution to adding a sensor to a group.
+// The function takes an optional PrivateInfo struct, which is necessary only if the
+// sensor referenced is a private sensor.
+// This call requires a key with write permissions to be set prior to calling.
+// The MemberID will be returned on success, or else an error.
 func (s SensorID) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 	reqBody := struct {
 		S SensorID `json:"sensor_id"`
@@ -329,10 +530,10 @@ func (s SensorID) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 	return addMember(g, reqJSON)
 }
 
-// addMember is the private function for handling the common code for create a member.
+// addMember is the private function for handling the common code for member addition.
 // Both the SensorID and SensorIndex versions of AddMember rely on this.
 func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
-	url := fmt.Sprintf(urlMembers, g)
+	url := fmt.Sprintf(URLMEMBERS, g)
 	req, err := setupCall(http.MethodPost, url, reqJSON)
 	if err != nil {
 		log.Printf("Unable to setup call: %s\n", err)
@@ -361,8 +562,11 @@ func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
 	return memberResp.M, nil
 }
 
+// RemoveMember removes the member specified from the group specified.
+// This call requires a key with write permissions to be set prior to calling.
+// On success, nil will be returned or else an error.
 func RemoveMember(m MemberID, g GroupID) error {
-	url := fmt.Sprintf(urlMembers+"/%d", g, m)
+	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
 	req, err := setupCall(http.MethodDelete, url, nil)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
@@ -395,6 +599,12 @@ func RemoveMember(m MemberID, g GroupID) error {
 	return nil
 }
 
+func MemberData(g GroupID, m MemberID, f ...SensorFields) {
+}
+
+func MembersData(g GroupID, p ...SensorParams) {
+}
+
 // setupCall performs common tasks that are prerequisite before calling the API.
 // It initializes a request object and adds the appropriate key (read or write) to the request.
 // It returns a request ready for execution or an error.
@@ -409,14 +619,14 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 		if len(apiReadKey) == 0 {
 			return nil, errors.New("PurpleAir read key is not set")
 		}
-		req.Header.Add(apiKeyHeader, apiReadKey)
+		req.Header.Add(APIKEYHEADER, apiReadKey)
 	case "POST":
 		fallthrough
 	case "DELETE":
 		if len(apiWriteKey) == 0 {
 			return nil, errors.New("PurpleAir write key is not set")
 		}
-		req.Header.Add(apiKeyHeader, apiWriteKey)
+		req.Header.Add(APIKEYHEADER, apiWriteKey)
 	}
 	req.Header.Add("Content-Type", "application/json")
 
@@ -425,167 +635,10 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 
 /*
 
-type StationInfo struct {
-	Name               string
-	Icon               string
-	Model              string
-	Hardware           string
-	Location           string
-	Private            string
-	Latitude           float64
-	Longitude          float64
-	Altitude           int
-	PositionRating     int
-	LedBrightness      int
-	FirmwareVersion    string
-	FirmwareUpgrade    string
-	RSSI               float64
-	Uptime             int
-	Latency            int
-	Memory             int
-	LastSeen           int
-	LastModified       int
-	ChannelState       int
-	ChannelFlags       int
-	ChannelFlagsManual int
-	ChannelFlagsAuto   int
-	Confidence         int
-	ConfidenceManual   int
-	ConfidenceAuto     int
-}
-
-type EnvFields struct {
-	Humidity      int
-	Humidity_a    int
-	Humidity_b    int
-	Temperature   int
-	Temperature_a int
-	Temperature_b int
-	Pressure      float64
-	Pressure_a    float64
-	Pressure_b    float64
-}
-
-type MiscFields struct {
-	Voc         float64
-	Voc_a       float64
-	Voc_b       float64
-	Ozone1      float64
-	AnalogInput float64
-}
-
-type PartMass1_0Fields struct {
-	PM1_0       float64
-	PM1_0_a     float64
-	PM1_0_b     float64
-	PM1_0atm    float64
-	PM1_0atm_a  float64
-	PM1_0atm_b  float64
-	PM1_0cf_1   float64
-	PM1_0cf_1_a float64
-	PM1_0cf_1_b float64
-}
-
-type PartMass2_5Fields struct {
-	PM2_5alt    float64
-	PM2_5alt_a  float64
-	PM2_5alt_b  float64
-	PM2_5       float64
-	PM2_5_a     float64
-	PM2_5_b     float64
-	PM2_5atm    float64
-	PM2_5atm_a  float64
-	PM2_5atm_b  float64
-	PM2_5cf_1   float64
-	PM2_5cf_1_a float64
-	PM2_5cf_1_b float64
-}
-
-type PartMass2_5AvgFields struct {
-	PM2_5_10m   float64
-	PM2_5_10m_a float64
-	PM2_5_10m_b float64
-	PM2_5_30m   float64
-	PM2_5_30m_a float64
-	PM2_5_30m_b float64
-	PM2_5_60m   float64
-	PM2_5_60m_a float64
-	PM2_5_60m_b float64
-	PM2_5_6h    float64
-	PM2_5_6h_a  float64
-	PM2_5_6h_b  float64
-	PM2_5_24h   float64
-	PM2_5_24h_a float64
-	PM2_5_24h_b float64
-	PM2_5_1w    float64
-	PM2_5_1w_a  float64
-	PM2_5_1w_b  float64
-}
-
-type PartMass10_0Fields struct {
-	PM10_0       float64
-	PM10_0_a     float64
-	PM10_0_b     float64
-	PM10_0atm    float64
-	PM10_0atm_a  float64
-	PM10_0atm_b  float64
-	PM10_0cf_1   float64
-	PM10_0cf_1_a float64
-	PM10_0cf_1_b float64
-}
-
-type PartCountFields struct {
-	PC0_3_um    int
-	PC0_3_um_a  int
-	PC0_3_um_b  int
-	PC0_5_um    int
-	PC0_5_um_a  int
-	PC0_5_um_b  int
-	PC1_0_um    int
-	PC1_0_um_a  int
-	PC1_0_um_b  int
-	PC2_5_um    int
-	PC2_5_um_a  int
-	PC2_5_um_b  int
-	PC5_0_um    int
-	PC5_0_um_a  int
-	PC5_0_um_b  int
-	PC10_0_um   int
-	PC10_0_um_a int
-	PC10_0_um_b int
-}
-
-type ThingSpeakFields struct {
-	PrimaryID_a    int
-	PrimaryKey_a   string
-	SecondaryID_a  int
-	SecondaryKey_a string
-	PrimaryID_b    int
-	PrimaryKey_b   string
-	SecondaryID_b  int
-	SecondaryKey_b string
-}
-
-type SensorData struct {
-	Station       StationInfo
-	Environment   EnvFields
-	Misc          MiscFields
-	Pm1_0         PartMass1_0Fields
-	Pm2_5         PartMass2_5Fields
-	Pm2_5Avg      PartMass2_5AvgFields
-	Pm10_0        PartMass10_0Fields
-	ParticleCount PartCountFields
-	ThingSpeak    ThingSpeakFields
-}
-
 type Point struct {
 	Lat  float64
 	Long float64
 }
-
-const (
-	paSensorsReq string = "https://api.purpleair.com/v1/sensors"
-)
 
 func SensorDataByList(sensorIDs []SensorID) ([]SensorData, err) {
 }
