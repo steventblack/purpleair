@@ -54,7 +54,7 @@ type GroupMember interface {
 }
 
 // SensorParams are options that can be passed in for customizing the sensor information
-// They are all optional.
+// They are all optional. For calls referencing a single sensor, only the Fields parameter is considered.
 type SensorParams struct {
 	Fields   string   `json:"fields,omitempty"`         // which sensor data fields to return
 	Loc      Location `json:"location_type,omitempty"`  // location: inside/outside
@@ -83,124 +83,124 @@ type SensorStats struct {
 // SensorInfo is the data response to a sensor query.
 // Not all fields may be available depending on the query fields specified or hardware capabilities.
 type SensorInfo struct {
-	Index           SensorIndex  `json:"sensor_index"`
-	Icon            int          `json"icon"`
-	Name            string       `json:"name"`
-	Private         Privacy      `json:"private"`
-	Loc             Location     `json:"location_type"`
-	Lat             float64      `json:"latitude"`
-	Lng             float64      `json:"longitude"`
-	Alt             int          `json:"altitude"`
-	Pos             int          `json:"position_rating"`
-	Model           string       `json:"model"`
-	Hardware        string       `json:"hardware"`
-	FirmVersion     string       `json:"firmware_version"`
-	FirmUpgrade     string       `json:"firmware_upgrade"`
-	RSSI            int          `json:"rssi"`
-	Uptime          int          `json:"uptime"`
-	Latency         int          `json:"pa_latency"`
-	Memory          int          `json:"memory"`
-	LED             int          `json:"led_brightness"`
-	ChnlState       ChannelState `json:"channel_state"`
-	ChnlFlags       ChanneFlag   `json:"channel_flags"`
-	ChnlManual      ChannelFlag  `json:"channel_flags_manual"`
-	ChnlAuto        ChannelFlag  `json:"channel_flags_auto"`
-	Cfdnc           int          `json:"confidence"`
-	CfdncManual     int          `json:"confidence_manual"`
-	CfdncAuto       int          `json:"confidence_auto"`
-	Mod             int          `json:"last_modifed"`
-	Created         int          `json:"date_created"`
-	PM_1_0          float64      `json:"pm1.0"`
-	PM_1_0_A        float64      `json:"pm1.0_a"`
-	PM_1_0_B        float64      `json:"pm1.0_b"`
-	PM_1_0_Atm      float64      `json:"pm1.0_atm"`
-	PM_1_0_Atm_A    float64      `json:"pm1.0_atm_a"`
-	PM_1_0_Atm_B    float64      `json:"pm1.0_atm_b"`
-	PM_1_0_Cf_1     float64      `json:"pm1.0_cf_1"`
-	PM_1_0_Cf_1_A   float64      `json:"pm1.0_cf_1_a"`
-	PM_1_0_Cf_1_B   float64      `json:"pm1.0_cf_1_b"`
-	PM_2_5_Alt      float64      `json:"pm2.5_alt"`
-	PM_2_5_Alt_A    float64      `json:"pm2.5_alt_a"`
-	PM_2_5_Alt_B    float64      `json:"pm2.5_alt_b"`
-	PM_2_5          float64      `json:"pm2.5"`
-	PM_2_5_A        float64      `json:"pm2.5_a"`
-	PM_2_5_B        float64      `json:"pm2.5_b"`
-	PM_2_5_Atm      float64      `json:"pm2.5_atm"`
-	PM_2_5_Atm_A    float64      `json:"pm2.5_atm_a"`
-	PM_2_5_Atm_B    float64      `json:"pm2.5_atm_b"`
-	PM_2_5_Cf_1     float64      `json:"pm2.5_cf_1"`
-	PM_2_5_Cf_1_A   float64      `json:"pm2.5_cf_1_a"`
-	PM_2_5_Cf_1_B   float64      `json:"pm2.5_cf_1_b"`
-	PM_2_5_10Min    float64      `json:"pm2.5_10minute"`
-	PM_2_5_10Min_A  float64      `json:"pm2.5_10minute_a"`
-	PM_2_5_10Min_B  float64      `json:"pm2.5_10minute_b"`
-	PM_2_5_30Min    float64      `json:"pm2.5_30minute"`
-	PM_2_5_30Min_A  float64      `json:"pm2.5_30minute_a"`
-	PM_2_5_30Min_B  float64      `json:"pm2.5_30minute_b"`
-	PM_2_5_60Min    float64      `json:"pm2.5_60minute"`
-	PM_2_5_60Min_A  float64      `json:"pm2.5_60minute_a"`
-	PM_2_5_60Min_B  float64      `json:"pm2.5_60minute_b"`
-	PM_2_5_6Hour    float64      `json:"pm2.5_6hour"`
-	PM_2_5_6Hour_A  float64      `json:"pm2.5_6hour_a"`
-	PM_2_5_6Hour_B  float64      `json:"pm2.5_6hour_b"`
-	PM_2_5_24Hour   float64      `json:"pm2.5_24hour"`
-	PM_2_5_24Hour_A float64      `json:"pm2.5_24hour_a"`
-	PM_2_5_24Hour_B float64      `json:"pm2.5_24hour_b"`
-	PM_2_5_1Week    float64      `json:"pm2.5_1week"`
-	PM_2_5_1Week_A  float64      `json:"pm2.5_1week_a"`
-	PM_2_5_1Week_B  float64      `json:"pm2.5_1week_b"`
-	PM_10_0         float64      `json:"pm10.0"`
-	PM_10_0_A       float64      `json:"pm10.0_a"`
-	PM_10_0_B       float64      `json:"pm10.0_b"`
-	PM_10_0_Atm     float64      `json:"pm10.0_atm"`
-	PM_10_0_Atm_A   float64      `json:"pm10.0_atm_a"`
-	PM_10_0_Atm_B   float64      `json:"pm10.0_atm_b"`
-	PM_10_0_Cf_1    float64      `json:"pm10.0_cf_1"`
-	PM_10_0_Cf_1_A  float64      `json:"pm10.0_cf_1_a"`
-	PM_10_0_Cf_1_B  float64      `json:"pm10.0_cf_1_b"`
-	PC_0_3um        int          `json:"0.3_um_count"`
-	PC_0_3um_A      int          `json:"0.3_um_count_a"`
-	PC_0_3um_B      int          `json:"0.3_um_count_b"`
-	PC_0_5um        int          `json:"0.5_um_count"`
-	PC_0_5um_A      int          `json:"0.5_um_count_a"`
-	PC_0_5um_B      int          `json:"0.5_um_count_b"`
-	PC_1_0um        int          `json:"1.0_um_count"`
-	PC_1_0um_A      int          `json:"1.0_um_count_a"`
-	PC_1_0um_B      int          `json:"1.0_um_count_b"`
-	PC_2_5um        int          `json:"2.5_um_count"`
-	PC_2_5um_A      int          `json:"2.5_um_count_a"`
-	PC_2_5um_B      int          `json:"2.5_um_count_b"`
-	PC_5_0um        int          `json:"5.0_um_count"`
-	PC_5_0um_A      int          `json:"5.0_um_count_a"`
-	PC_5_0um_B      int          `json:"5.0_um_count_b"`
-	PC_10_0um       int          `json:"10.0_um_count"`
-	PC_10_0um_A     int          `json:"10.0_um_count_a"`
-	PC_10_0um_B     int          `json:"10.0_um_count_b"`
-	Stats           SensorStats  `json:"stats"`
-	Stats_A         SensorStats  `json:"stats_a"`
-	Stats_B         SensorStats  `json:"stats_b"`
-	Humidity        int          `json:"humidity"`
-	Humidity_A      int          `json:"humidity_a"`
-	Humidity_B      int          `json:"humidity_b"`
-	Temp            int          `json:"temperature"`
-	Temp_A          int          `json:"temperature_a"`
-	Temp_B          int          `json:"temperature_b"`
-	Pressure        float64      `json:"pressure"`
-	Pressure_A      float64      `json:"pressure_a"`
-	Pressure_B      float64      `json:"pressure_b"`
-	VOC             float64      `json:"voc"`
-	VOC_A           float64      `json:"voc_a"`
-	VOC_B           float64      `json:"voc_b"`
-	Ozone           float64      `json:"ozone1"`
-	AnalogIn        float64      `json:"analog_input"`
-	PrimaryID_A     int          `json:"primary_id_a"`
-	PrimaryKey_A    string       `json:"primary_key_a"`
-	SecondaryID_A   int          `json:"secondary_id_a"`
-	SecondaryKey_A  string       `json:"secondary_key_a"`
-	PrimaryID_B     int          `json:"primary_id_b"`
-	PrimaryKey_B    string       `json:"primary_key_b"`
-	SecondaryID_B   int          `json:"secondary_id_b"`
-	SecondaryKey_B  string       `json:"secondary_key_b"`
+	Index           SensorIndex  `json:"sensor_index,omitempty"`
+	Icon            int          `json"icon,omitempty"`
+	Name            string       `json:"name,omitempty"`
+	Private         Privacy      `json:"private,omitempty"`
+	Loc             Location     `json:"location_type,omitempty"`
+	Lat             float64      `json:"latitude,omitempty"`
+	Lng             float64      `json:"longitude,omitempty"`
+	Alt             int          `json:"altitude,omitempty"`
+	Pos             int          `json:"position_rating,omitempty"`
+	Model           string       `json:"model,omitempty"`
+	Hardware        string       `json:"hardware,omitempty"`
+	FirmVersion     string       `json:"firmware_version,omitempty"`
+	FirmUpgrade     string       `json:"firmware_upgrade,omitempty"`
+	RSSI            int          `json:"rssi,omitempty"`
+	Uptime          int          `json:"uptime,omitempty"`
+	Latency         int          `json:"pa_latency,omitempty"`
+	Memory          int          `json:"memory,omitempty"`
+	LED             int          `json:"led_brightness,omitempty"`
+	ChnlState       ChannelState `json:"channel_state,omitempty"`
+	ChnlFlags       ChannelFlag  `json:"channel_flags,omitempty"`
+	ChnlManual      ChannelFlag  `json:"channel_flags_manual,omitempty"`
+	ChnlAuto        ChannelFlag  `json:"channel_flags_auto,omitempty"`
+	Cfdnc           int          `json:"confidence,omitempty"`
+	CfdncManual     int          `json:"confidence_manual,omitempty"`
+	CfdncAuto       int          `json:"confidence_auto,omitempty"`
+	Mod             int          `json:"last_modifed,omitempty"`
+	Created         int          `json:"date_created,omitempty"`
+	PM_1_0          float64      `json:"pm1.0,omitempty"`
+	PM_1_0_A        float64      `json:"pm1.0_a,omitempty"`
+	PM_1_0_B        float64      `json:"pm1.0_b,omitempty"`
+	PM_1_0_Atm      float64      `json:"pm1.0_atm,omitempty"`
+	PM_1_0_Atm_A    float64      `json:"pm1.0_atm_a,omitempty"`
+	PM_1_0_Atm_B    float64      `json:"pm1.0_atm_b,omitempty"`
+	PM_1_0_Cf_1     float64      `json:"pm1.0_cf_1,omitempty"`
+	PM_1_0_Cf_1_A   float64      `json:"pm1.0_cf_1_a,omitempty"`
+	PM_1_0_Cf_1_B   float64      `json:"pm1.0_cf_1_b,omitempty"`
+	PM_2_5_Alt      float64      `json:"pm2.5_alt,omitempty"`
+	PM_2_5_Alt_A    float64      `json:"pm2.5_alt_a,omitempty"`
+	PM_2_5_Alt_B    float64      `json:"pm2.5_alt_b,omitempty"`
+	PM_2_5          float64      `json:"pm2.5,omitempty"`
+	PM_2_5_A        float64      `json:"pm2.5_a,omitempty"`
+	PM_2_5_B        float64      `json:"pm2.5_b,omitempty"`
+	PM_2_5_Atm      float64      `json:"pm2.5_atm,omitempty"`
+	PM_2_5_Atm_A    float64      `json:"pm2.5_atm_a,omitempty"`
+	PM_2_5_Atm_B    float64      `json:"pm2.5_atm_b,omitempty"`
+	PM_2_5_Cf_1     float64      `json:"pm2.5_cf_1,omitempty"`
+	PM_2_5_Cf_1_A   float64      `json:"pm2.5_cf_1_a,omitempty"`
+	PM_2_5_Cf_1_B   float64      `json:"pm2.5_cf_1_b,omitempty"`
+	PM_2_5_10Min    float64      `json:"pm2.5_10minute,omitempty"`
+	PM_2_5_10Min_A  float64      `json:"pm2.5_10minute_a,omitempty"`
+	PM_2_5_10Min_B  float64      `json:"pm2.5_10minute_b,omitempty"`
+	PM_2_5_30Min    float64      `json:"pm2.5_30minute,omitempty"`
+	PM_2_5_30Min_A  float64      `json:"pm2.5_30minute_a,omitempty"`
+	PM_2_5_30Min_B  float64      `json:"pm2.5_30minute_b,omitempty"`
+	PM_2_5_60Min    float64      `json:"pm2.5_60minute,omitempty"`
+	PM_2_5_60Min_A  float64      `json:"pm2.5_60minute_a,omitempty"`
+	PM_2_5_60Min_B  float64      `json:"pm2.5_60minute_b,omitempty"`
+	PM_2_5_6Hour    float64      `json:"pm2.5_6hour,omitempty"`
+	PM_2_5_6Hour_A  float64      `json:"pm2.5_6hour_a,omitempty"`
+	PM_2_5_6Hour_B  float64      `json:"pm2.5_6hour_b,omitempty"`
+	PM_2_5_24Hour   float64      `json:"pm2.5_24hour,omitempty"`
+	PM_2_5_24Hour_A float64      `json:"pm2.5_24hour_a,omitempty"`
+	PM_2_5_24Hour_B float64      `json:"pm2.5_24hour_b,omitempty"`
+	PM_2_5_1Week    float64      `json:"pm2.5_1week,omitempty"`
+	PM_2_5_1Week_A  float64      `json:"pm2.5_1week_a,omitempty"`
+	PM_2_5_1Week_B  float64      `json:"pm2.5_1week_b,omitempty"`
+	PM_10_0         float64      `json:"pm10.0,omitempty"`
+	PM_10_0_A       float64      `json:"pm10.0_a,omitempty"`
+	PM_10_0_B       float64      `json:"pm10.0_b,omitempty"`
+	PM_10_0_Atm     float64      `json:"pm10.0_atm,omitempty"`
+	PM_10_0_Atm_A   float64      `json:"pm10.0_atm_a,omitempty"`
+	PM_10_0_Atm_B   float64      `json:"pm10.0_atm_b,omitempty"`
+	PM_10_0_Cf_1    float64      `json:"pm10.0_cf_1,omitempty"`
+	PM_10_0_Cf_1_A  float64      `json:"pm10.0_cf_1_a,omitempty"`
+	PM_10_0_Cf_1_B  float64      `json:"pm10.0_cf_1_b,omitempty"`
+	PC_0_3um        int          `json:"0.3_um_count,omitempty"`
+	PC_0_3um_A      int          `json:"0.3_um_count_a,omitempty"`
+	PC_0_3um_B      int          `json:"0.3_um_count_b,omitempty"`
+	PC_0_5um        int          `json:"0.5_um_count,omitempty"`
+	PC_0_5um_A      int          `json:"0.5_um_count_a,omitempty"`
+	PC_0_5um_B      int          `json:"0.5_um_count_b,omitempty"`
+	PC_1_0um        int          `json:"1.0_um_count,omitempty"`
+	PC_1_0um_A      int          `json:"1.0_um_count_a,omitempty"`
+	PC_1_0um_B      int          `json:"1.0_um_count_b,omitempty"`
+	PC_2_5um        int          `json:"2.5_um_count,omitempty"`
+	PC_2_5um_A      int          `json:"2.5_um_count_a,omitempty"`
+	PC_2_5um_B      int          `json:"2.5_um_count_b,omitempty"`
+	PC_5_0um        int          `json:"5.0_um_count,omitempty"`
+	PC_5_0um_A      int          `json:"5.0_um_count_a,omitempty"`
+	PC_5_0um_B      int          `json:"5.0_um_count_b,omitempty"`
+	PC_10_0um       int          `json:"10.0_um_count,omitempty"`
+	PC_10_0um_A     int          `json:"10.0_um_count_a,omitempty"`
+	PC_10_0um_B     int          `json:"10.0_um_count_b,omitempty"`
+	Stats           SensorStats  `json:"stats,omitempty"`
+	Stats_A         SensorStats  `json:"stats_a,omitempty"`
+	Stats_B         SensorStats  `json:"stats_b,omitempty"`
+	Humidity        int          `json:"humidity,omitempty"`
+	Humidity_A      int          `json:"humidity_a,omitempty"`
+	Humidity_B      int          `json:"humidity_b,omitempty"`
+	Temp            int          `json:"temperature,omitempty"`
+	Temp_A          int          `json:"temperature_a,omitempty"`
+	Temp_B          int          `json:"temperature_b,omitempty"`
+	Pressure        float64      `json:"pressure,omitempty"`
+	Pressure_A      float64      `json:"pressure_a,omitempty"`
+	Pressure_B      float64      `json:"pressure_b,omitempty"`
+	VOC             float64      `json:"voc,omitempty"`
+	VOC_A           float64      `json:"voc_a,omitempty"`
+	VOC_B           float64      `json:"voc_b,omitempty"`
+	Ozone           float64      `json:"ozone1,omitempty"`
+	AnalogIn        float64      `json:"analog_input,omitempty"`
+	PrimaryID_A     int          `json:"primary_id_a,omitempty"`
+	PrimaryKey_A    string       `json:"primary_key_a,omitempty"`
+	SecondaryID_A   int          `json:"secondary_id_a,omitempty"`
+	SecondaryKey_A  string       `json:"secondary_key_a,omitempty"`
+	PrimaryID_B     int          `json:"primary_id_b,omitempty"`
+	PrimaryKey_B    string       `json:"primary_key_b,omitempty"`
+	SecondaryID_B   int          `json:"secondary_id_b,omitempty"`
+	SecondaryKey_B  string       `json:"secondary_key_b,omitempty"`
 }
 
 // KeyTypes as returned from PurpleAir.
@@ -599,10 +599,80 @@ func RemoveMember(m MemberID, g GroupID) error {
 	return nil
 }
 
-func MemberData(g GroupID, m MemberID, f ...SensorFields) {
+// MemberData returns the SensorInfo for a member of a group.
+// The optional SensorFields parameter can restrict the information returned to the named fields.
+// Omitting the SensorFields parameter will return all available information fields.
+// This call requires a key with read permissions to be set prior to calling.
+// On success, the SensorInfo will be returned, or else an error.
+func MemberData(g GroupID, m MemberID, p ...SensorParams) (*SensorInfo, error) {
+	var reqJSON []byte
+	var err error
+
+	// TODO: put in check that only a single param has been passed in, or else error out
+	// if any params have been passed in, convert it to JSON for passing in on the API request
+	if len(p) > 0 {
+		// TODO: insert logic to filter out all params except fields (and make sure fields is set)
+		// as the other params aren't applicable for a single sensor request
+		reqJSON, err = json.Marshal(p[0])
+		if err != nil {
+			log.Printf("Unable to marshal json body: %s\n", err)
+			return nil, err
+		}
+	}
+
+	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
+	req, err := setupCall(http.MethodGet, url, reqJSON)
+	if err != nil {
+		log.Printf("Unable to setup API call: %s\n", err)
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Unable to execute HTTP request: %s\n", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	sensorResp := struct {
+		// additional fields in the response are omitted as they aren't of any interest
+		S SensorInfo `json:"sensor"`
+	}{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&sensorResp)
+	if err != nil {
+		log.Printf("Unable to decode HTTP body: %s\n", err)
+		return nil, err
+	}
+
+	return &sensorResp.S, nil
 }
 
-func MembersData(g GroupID, p ...SensorParams) {
+// MembersData returns the SensorInfo for all members of a group.
+// The optional SensorFields parameter can restrict the information returned to the named fields.
+// A subset of the members may be specified using the Show parameter in the SensorParams.
+// Omitting the SensorFields parameter will return all available information fields.
+// This call requires a key with read permissions to be set prior to calling.
+// On success, a slice of SensorInfos will be returned, or else an error.
+func MembersData(g GroupID, p ...SensorParams) ([]SensorInfo, error) {
+	url := fmt.Sprintf(URLMEMBERS, g)
+
+	req, err := setupCall(http.MethodGet, url, nil)
+	if err != nil {
+		log.Printf("Unable to setup API call: %s\n", err)
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Unable to execute HTTP request: %s\n", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return nil, nil
 }
 
 // setupCall performs common tasks that are prerequisite before calling the API.
@@ -632,21 +702,3 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 
 	return req, nil
 }
-
-/*
-
-type Point struct {
-	Lat  float64
-	Long float64
-}
-
-func SensorDataByList(sensorIDs []SensorID) ([]SensorData, err) {
-}
-
-func SensorDataByArea(nwPoint, sePoint Point) ([]SensorData, err) {
-}
-
-func SensorDataByGroup(groupID GroupID) ([]SensorData, err) {
-}
-
-*/
