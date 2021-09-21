@@ -62,6 +62,39 @@ func TestKeys(t *testing.T) {
 		t.Log("Expected unknown key, got", kt)
 		t.Fail()
 	}
+
+	// read key set
+	kt, err = SetAPIKey(km["read"])
+	if err != nil {
+		t.Log("Unable to SetAPIKey", err)
+		t.Fail()
+	}
+	if kt != APIKEYREAD {
+		t.Log("Expected read key, got", kt)
+		t.Fail()
+	}
+
+	// write key set
+	kt, err = SetAPIKey(km["write"])
+	if err != nil {
+		t.Log("Unable to SetAPIKey", err)
+		t.Fail()
+	}
+	if kt != APIKEYWRITE {
+		t.Log("Expected write key, got", kt)
+		t.Fail()
+	}
+
+	// bogus key set
+	kt, err = SetAPIKey("bogus")
+	if err == nil {
+		t.Log("Missing error for bogus key on SetAPIKey")
+		t.Fail()
+	}
+	if kt != APIKEYUNKNOWN {
+		t.Log("Expected unknown key, got", kt)
+		t.Fail()
+	}
 }
 
 func TestGroups(t *testing.T) {
