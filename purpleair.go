@@ -319,18 +319,7 @@ func CheckAPIKey(k string) (KeyType, error) {
 
 	// if invalid key, an error is returned
 	if resp.StatusCode != http.StatusCreated {
-		errorResp := struct {
-			E string `json:"error"`
-		}{}
-
-		decoder := json.NewDecoder(resp.Body)
-		err = decoder.Decode(&errorResp)
-		if err != nil {
-			log.Printf("Unable to decode HTTP body: %s\n", err)
-			return keyType, err
-		}
-
-		return keyType, errors.New(errorResp.E)
+		return keyType, extractError(resp)
 	}
 
 	decoder := json.NewDecoder(resp.Body)
@@ -741,4 +730,20 @@ func processInfoParams(p []SensorParams) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("Too many SensorParams specified (%d)", len(p))
 	}
+}
+
+// extractError handles an error response back from the API and returns an error
+func extractError(r *http.Response) error {
+	errorResp := struct {
+		E string `json:"error"`
+	}{}
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&errorResp)
+	if err != nil {
+		log.Printf("Unable to decode HTTP error response: %s\n", err)
+		return err
+	}
+
+	return errors.New(errorResp.E)
 }
