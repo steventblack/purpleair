@@ -43,8 +43,9 @@ func TestKeys(t *testing.T) {
 		t.Fail()
 	}
 	kt, err = CheckAPIKey("BOGUS")
-	if err != nil {
-		t.Log("Unable to CheckAPIKey", err)
+	if err == nil {
+		t.Log("Missing error for bogus key on CheckAPIKey")
+		t.Fail()
 	}
 	if kt != APIKEYUNKNOWN {
 		t.Log("Expected unknown key, got", kt)
