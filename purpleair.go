@@ -317,6 +317,22 @@ func CheckAPIKey(k string) (KeyType, error) {
 	}
 	defer resp.Body.Close()
 
+	// if invalid key, an error is returned
+	if resp.StatusCode != http.StatusCreated {
+		errorResp := struct {
+			E string `json:"error"`
+		}{}
+
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(&errorResp)
+		if err != nil {
+			log.Printf("Unable to decode HTTP body: %s\n", err)
+			return keyType, err
+		}
+
+		return keyType, errors.New(errorResp.E)
+	}
+
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&keyTypeResp)
 	if err != nil {
@@ -605,22 +621,9 @@ func RemoveMember(m MemberID, g GroupID) error {
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
 func MemberData(g GroupID, m MemberID, p ...SensorParams) (*SensorInfo, error) {
-	var reqJSON []byte
-	var err error
-
-	// TODO: put in check that only a single param has been passed in, or else error out
-	// if any params have been passed in, convert it to JSON for passing in on the API request
-	if len(p) > 0 {
-		// TODO: insert logic to filter out all params except fields (and make sure fields is set)
-		// as the other params aren't applicable for a single sensor request
-		reqJSON, err = json.Marshal(p[0])
-		if err != nil {
-			log.Printf("Unable to marshal json body: %s\n", err)
-			return nil, err
-		}
-	}
-
+	reqJSON, err := processInfoParams(p)
 	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
+
 	req, err := setupCall(http.MethodGet, url, reqJSON)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
@@ -651,27 +654,44 @@ func MemberData(g GroupID, m MemberID, p ...SensorParams) (*SensorInfo, error) {
 }
 
 // MembersData returns the SensorInfo for all members of a group.
-// The optional SensorFields parameter can restrict the information returned to the named fields.
-// A subset of the members may be specified using the Show parameter in the SensorParams.
-// Omitting the SensorFields parameter will return all available information fields.
+// The required SensorParams must specify at least the fields option,
+// and may additionally specify other selection criteria
 // This call requires a key with read permissions to be set prior to calling.
 // On success, a slice of SensorInfos will be returned, or else an error.
-func MembersData(g GroupID, p ...SensorParams) ([]SensorInfo, error) {
-	url := fmt.Sprintf(URLMEMBERS, g)
+func MembersData(g GroupID, p SensorParams) ([]SensorInfo, error) {
+	/*
+		reqJSON, err := processInfoParams(p)
+		url := fmt.Sprintf(URLMEMBERS, g)
 
-	req, err := setupCall(http.MethodGet, url, nil)
-	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
-		return nil, err
-	}
+		req, err := setupCall(http.MethodGet, url, reqJSON)
+		if err != nil {
+			log.Printf("Unable to setup API call: %s\n", err)
+			return nil, err
+		}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("Unable to execute HTTP request: %s\n", err)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		sensorResp := struct {
+			// additional fields in the response are omitted as they aren't of any interest
+			F []string   `json:"fields"`
+			D [][]string `json:"data"`
+		}{}
+
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(&sensorResp)
+		if err != nil {
+			log.Printf("Unable to decode HTTP body: %s\n", err)
+			return nil, err
+		}
+
+		return &sensorResp.S, nil
+	*/
 	return nil, nil
 }
 
@@ -701,4 +721,24 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 	req.Header.Add("Content-Type", "application/json")
 
 	return req, nil
+}
+
+// processInfoParams converts the params (if specified) into the appropriate JSON
+// for a SensorInfo request. If nothing specified, then a nil byte array is returned.
+func processInfoParams(p []SensorParams) ([]byte, error) {
+	switch len(p) {
+	case 0:
+		return nil, nil
+
+	case 1:
+		jsonBody, err := json.Marshal(p[0])
+		if err != nil {
+			log.Printf("Unable to marshal json body: %s\n", err)
+			return nil, err
+		}
+		return jsonBody, nil
+
+	default:
+		return nil, fmt.Errorf("Too many SensorParams specified (%d)", len(p))
+	}
 }
