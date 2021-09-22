@@ -177,6 +177,13 @@ func TestGroups(t *testing.T) {
 		t.Fail()
 	}
 
+	// fetch a group member's data
+	_, err = MemberData(g, m)
+	if err != nil {
+		t.Log("Unable to get member data", err)
+		t.Fail()
+	}
+
 	// remove the group member
 	err = RemoveMember(m, g)
 	if err != nil {

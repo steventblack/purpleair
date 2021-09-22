@@ -53,10 +53,13 @@ type GroupMember interface {
 	AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error)
 }
 
-// SensorParams are options that can be passed in for customizing the sensor information
-// They are all optional. For calls referencing a single sensor, only the Fields parameter is considered.
+// SensorParams are options that can be passed in for customizing the sensor information returned.
+// For bulk calls, all options are available. For single-sensor calls (MemberData, SensorData),
+// only the Fields element is considered and it is optional. Omitting it will result in all
+// data available returned. For bulk-sensor calls (MembersData, SensorsData), the Fields element
+// is required but all other params are optional.
 type SensorParams struct {
-	Fields   string   `json:"fields,omitempty"`         // which sensor data fields to return
+	Fields   string   `json:"fields,omitempty"`         // comma-delimited list of sensor data fields to return
 	Loc      Location `json:"location_type,omitempty"`  // location: inside/outside
 	ReadKeys string   `json:"read_keys,omitempty"`      // key required for access to private devices
 	Show     string   `json:"show_only,omitempty"`      // return data only for sensorIndexes listed
@@ -66,6 +69,10 @@ type SensorParams struct {
 	LatNW    float64  `json:"nwlat,omitempty"`          // and return sensor info only for devices within the box
 	LngSE    float64  `json:"selng,omitempty"`
 	LatSE    float64  `json:"selat,omitempty"`
+}
+
+type SensorFields struct {
+	Fields string `json:"fields,omitempty"` // comma-delimited list of sensor data fields to return (return all if omitted)
 }
 
 // Collection of averaged statistics for the sensor channel
@@ -609,8 +616,8 @@ func RemoveMember(m MemberID, g GroupID) error {
 // Omitting the SensorFields parameter will return all available information fields.
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
-func MemberData(g GroupID, m MemberID, p ...SensorParams) (*SensorInfo, error) {
-	reqJSON, err := processInfoParams(p)
+func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
+	reqJSON, err := processInfoFields(f)
 	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
 
 	req, err := setupCall(http.MethodGet, url, reqJSON)
@@ -642,45 +649,12 @@ func MemberData(g GroupID, m MemberID, p ...SensorParams) (*SensorInfo, error) {
 	return &sensorResp.S, nil
 }
 
-// MembersData returns the SensorInfo for all members of a group.
-// The required SensorParams must specify at least the fields option,
-// and may additionally specify other selection criteria
+// SensorData returns the SensorInfo for the named SensorIndex.
+// The optional SensorFields parameter can restrict the information returned to the named fields.
+// Omitting the SensorFields parameter will return all available information fields.
 // This call requires a key with read permissions to be set prior to calling.
-// On success, a slice of SensorInfos will be returned, or else an error.
-func MembersData(g GroupID, p SensorParams) ([]SensorInfo, error) {
-	/*
-		reqJSON, err := processInfoParams(p)
-		url := fmt.Sprintf(URLMEMBERS, g)
-
-		req, err := setupCall(http.MethodGet, url, reqJSON)
-		if err != nil {
-			log.Printf("Unable to setup API call: %s\n", err)
-			return nil, err
-		}
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Printf("Unable to execute HTTP request: %s\n", err)
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		sensorResp := struct {
-			// additional fields in the response are omitted as they aren't of any interest
-			F []string   `json:"fields"`
-			D [][]string `json:"data"`
-		}{}
-
-		decoder := json.NewDecoder(resp.Body)
-		err = decoder.Decode(&sensorResp)
-		if err != nil {
-			log.Printf("Unable to decode HTTP body: %s\n", err)
-			return nil, err
-		}
-
-		return &sensorResp.S, nil
-	*/
+// On success, the SensorInfo will be returned, or else an error.
+func SensorData(s SensorIndex, f ...SensorFields) (*SensorInfo, error) {
 	return nil, nil
 }
 
@@ -712,14 +686,36 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 	return req, nil
 }
 
+// processInfoFields converts the optional fields param into the appropriate JSON
+// for a SensorInfo-related request. If nothing is specified, the nil byte array
+// is returned. Errors are return if more than one fields param is specified.
+func processInfoFields(f []SensorFields) ([]byte, error) {
+	switch len(f) {
+	case 0:
+		return nil, nil
+	case 1:
+		jsonBody, err := json.Marshal(f[0])
+		if err != nil {
+			log.Printf("Unable to marshal json body: %s\n", err)
+			return nil, err
+		}
+		return jsonBody, nil
+	default:
+		return nil, fmt.Errorf("Too many SensorFields specified (%d)", len(f))
+	}
+}
+
 // processInfoParams converts the params (if specified) into the appropriate JSON
 // for a SensorInfo request. If nothing specified, then a nil byte array is returned.
+// If the fieldsOnly is true, only the fields parameter will be encoded. This is
+// needed for the single-sensor calls (SensorData, MemberData).
 func processInfoParams(p []SensorParams) ([]byte, error) {
 	switch len(p) {
 	case 0:
 		return nil, nil
 
 	case 1:
+		// TODO: verify fields is present (it's a required parameter)
 		jsonBody, err := json.Marshal(p[0])
 		if err != nil {
 			log.Printf("Unable to marshal json body: %s\n", err)
