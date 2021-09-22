@@ -16,6 +16,7 @@ var km map[string]string
 const (
 	TESTGROUP     string      = "testing_group"
 	TESTSENSORIDX SensorIndex = 118475
+	TESTFIELDS    string      = "sensor_index,name,location_type,hardware,latitude,longitude"
 )
 
 // Initialization of read & write keys used for API access
@@ -184,6 +185,17 @@ func TestGroups(t *testing.T) {
 		t.Fail()
 	}
 
+	/* TODO: this is failing; figure out why
+	// TODO: may be required as URL param (URL-encoded)?
+	// fetch a group member's data w/ a fields param
+	fp := SensorFields{Fields: TESTFIELDS}
+	_, err = MemberData(g, m, fp)
+	if err != nil {
+		t.Log("Unable to get member data with fields", err)
+		t.Fail()
+	}
+	*/
+
 	// remove the group member
 	err = RemoveMember(m, g)
 	if err != nil {
@@ -203,4 +215,9 @@ func TestGroups(t *testing.T) {
 
 // Suite of tests for retriving sensor info
 func TestSensorInfo(t *testing.T) {
+	_, err := SensorData(TESTSENSORIDX)
+	if err != nil {
+		t.Log("Unable to get sensor data", err)
+		t.Fail()
+	}
 }

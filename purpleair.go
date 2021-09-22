@@ -655,7 +655,35 @@ func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
 func SensorData(s SensorIndex, f ...SensorFields) (*SensorInfo, error) {
-	return nil, nil
+	reqJSON, err := processInfoFields(f)
+	url := fmt.Sprintf(URLSENSORS+"/%d", s)
+
+	req, err := setupCall(http.MethodGet, url, reqJSON)
+	if err != nil {
+		log.Printf("Unable to setup API call: %s\n", err)
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Unable to execute HTTP request: %s\n", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	sensorResp := struct {
+		S SensorInfo `json:"sensor"`
+	}{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&sensorResp)
+	if err != nil {
+		log.Printf("Unable to decode HTTP body: %s\n", err)
+		return nil, err
+	}
+
+	return &sensorResp.S, nil
 }
 
 // setupCall performs common tasks that are prerequisite before calling the API.
