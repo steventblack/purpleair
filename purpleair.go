@@ -617,15 +617,9 @@ func RemoveMember(m MemberID, g GroupID) error {
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
 func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
-	reqJSON, err := processInfoFields(f)
-	if err != nil {
-		log.Printf("Unable to process sensor fields: %s\n", err)
-		return nil, err
-	}
-
 	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
 
-	return sensorDataCommon(url, reqJSON)
+	return sensorDataCommon(url, f)
 }
 
 // SensorData returns the SensorInfo for the named SensorIndex.
@@ -634,22 +628,25 @@ func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
 func SensorData(s SensorIndex, f ...SensorFields) (*SensorInfo, error) {
-	reqJSON, err := processInfoFields(f)
-	if err != nil {
-		log.Printf("Unable to process sensor fields: %s\n", err)
-		return nil, err
-	}
-
 	url := fmt.Sprintf(URLSENSORS+"/%d", s)
 
-	return sensorDataCommon(url, reqJSON)
+	return sensorDataCommon(url, f)
 }
 
-func sensorDataCommon(url string, reqBody []byte) (*SensorInfo, error) {
-	req, err := setupCall(http.MethodGet, url, reqBody)
+func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
+	req, err := setupCall(http.MethodGet, url, nil)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
 		return nil, err
+	}
+
+	switch len(f) {
+	case 0:
+		// if nothing specified, then skip
+	case 1:
+		req.URL.Query().Add("fields", f[0].Fields)
+	default:
+		return nil, errors.New("Too many SensorFields specified (max 1)")
 	}
 
 	client := &http.Client{}
@@ -718,29 +715,6 @@ func processInfoFields(f []SensorFields) ([]byte, error) {
 		return jsonBody, nil
 	default:
 		return nil, fmt.Errorf("Too many SensorFields specified (%d)", len(f))
-	}
-}
-
-// processInfoParams converts the params (if specified) into the appropriate JSON
-// for a SensorInfo request. If nothing specified, then a nil byte array is returned.
-// If the fieldsOnly is true, only the fields parameter will be encoded. This is
-// needed for the single-sensor calls (SensorData, MemberData).
-func processInfoParams(p []SensorParams) ([]byte, error) {
-	switch len(p) {
-	case 0:
-		return nil, nil
-
-	case 1:
-		// TODO: verify fields is present (it's a required parameter)
-		jsonBody, err := json.Marshal(p[0])
-		if err != nil {
-			log.Printf("Unable to marshal json body: %s\n", err)
-			return nil, err
-		}
-		return jsonBody, nil
-
-	default:
-		return nil, fmt.Errorf("Too many SensorParams specified (%d)", len(p))
 	}
 }
 

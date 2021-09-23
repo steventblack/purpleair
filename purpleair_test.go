@@ -185,16 +185,12 @@ func TestGroups(t *testing.T) {
 		t.Fail()
 	}
 
-	/* TODO: this is failing; figure out why
-	// TODO: may be required as URL param (URL-encoded)?
-	// fetch a group member's data w/ a fields param
 	fp := SensorFields{Fields: TESTFIELDS}
 	_, err = MemberData(g, m, fp)
 	if err != nil {
 		t.Log("Unable to get member data with fields", err)
 		t.Fail()
 	}
-	*/
 
 	// remove the group member
 	err = RemoveMember(m, g)
@@ -218,6 +214,13 @@ func TestSensorInfo(t *testing.T) {
 	_, err := SensorData(TESTSENSORIDX)
 	if err != nil {
 		t.Log("Unable to get sensor data", err)
+		t.Fail()
+	}
+
+	fp := SensorFields{Fields: TESTFIELDS}
+	_, err = SensorData(TESTSENSORIDX, fp)
+	if err != nil {
+		t.Log("Unable to get sensor data with fields", err)
 		t.Fail()
 	}
 }
