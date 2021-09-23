@@ -54,9 +54,7 @@ type GroupMember interface {
 }
 
 // SensorParams are options that can be passed in for customizing the sensor information returned.
-// For bulk calls, all options are available. For single-sensor calls (MemberData, SensorData),
-// only the Fields element is considered and it is optional. Omitting it will result in all
-// data available returned. For bulk-sensor calls (MembersData, SensorsData), the Fields element
+// For bulk-sensor calls (MembersData, SensorsData), the Fields element
 // is required but all other params are optional.
 type SensorParams struct {
 	Fields   string   `json:"fields,omitempty"`         // comma-delimited list of sensor data fields to return
@@ -71,6 +69,8 @@ type SensorParams struct {
 	LatSE    float64  `json:"selat,omitempty"`
 }
 
+// SensorFields specify which fields are to be returned for single-sensor calls (MemberData, SensorData).
+// If omitted, then all available fields will be returned.
 type SensorFields struct {
 	Fields string `json:"fields,omitempty"` // comma-delimited list of sensor data fields to return (return all if omitted)
 }
@@ -697,25 +697,6 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 	req.Header.Add("Content-Type", "application/json")
 
 	return req, nil
-}
-
-// processInfoFields converts the optional fields param into the appropriate JSON
-// for a SensorInfo-related request. If nothing is specified, the nil byte array
-// is returned. Errors are return if more than one fields param is specified.
-func processInfoFields(f []SensorFields) ([]byte, error) {
-	switch len(f) {
-	case 0:
-		return nil, nil
-	case 1:
-		jsonBody, err := json.Marshal(f[0])
-		if err != nil {
-			log.Printf("Unable to marshal json body: %s\n", err)
-			return nil, err
-		}
-		return jsonBody, nil
-	default:
-		return nil, fmt.Errorf("Too many SensorFields specified (%d)", len(f))
-	}
 }
 
 // extractError handles an error response back from the API and returns an error
