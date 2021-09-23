@@ -618,35 +618,14 @@ func RemoveMember(m MemberID, g GroupID) error {
 // On success, the SensorInfo will be returned, or else an error.
 func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
 	reqJSON, err := processInfoFields(f)
+	if err != nil {
+		log.Printf("Unable to process sensor fields: %s\n", err)
+		return nil, err
+	}
+
 	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
 
-	req, err := setupCall(http.MethodGet, url, reqJSON)
-	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
-		return nil, err
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	sensorResp := struct {
-		// additional fields in the response are omitted as they aren't of any interest
-		S SensorInfo `json:"sensor"`
-	}{}
-
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&sensorResp)
-	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
-		return nil, err
-	}
-
-	return &sensorResp.S, nil
+	return sensorDataCommon(url, reqJSON)
 }
 
 // SensorData returns the SensorInfo for the named SensorIndex.
@@ -656,9 +635,18 @@ func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
 // On success, the SensorInfo will be returned, or else an error.
 func SensorData(s SensorIndex, f ...SensorFields) (*SensorInfo, error) {
 	reqJSON, err := processInfoFields(f)
+	if err != nil {
+		log.Printf("Unable to process sensor fields: %s\n", err)
+		return nil, err
+	}
+
 	url := fmt.Sprintf(URLSENSORS+"/%d", s)
 
-	req, err := setupCall(http.MethodGet, url, reqJSON)
+	return sensorDataCommon(url, reqJSON)
+}
+
+func sensorDataCommon(url string, reqBody []byte) (*SensorInfo, error) {
+	req, err := setupCall(http.MethodGet, url, reqBody)
 	if err != nil {
 		log.Printf("Unable to setup API call: %s\n", err)
 		return nil, err
