@@ -20,7 +20,7 @@ const (
 )
 
 // Initialization of read & write keys used for API access
-// If keys are not available, then unable to perform any API tests
+// If keys are not available, then it is unable to perform any API tests
 func init() {
 	f, err := ioutil.ReadFile("./keys.JSON")
 	if err != nil {
@@ -31,8 +31,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("Keys initialized\n")
 }
 
 // Suite of tests related to key validation
@@ -211,16 +209,19 @@ func TestGroups(t *testing.T) {
 
 // Suite of tests for retriving sensor info
 func TestSensorInfo(t *testing.T) {
+	// test fetching all data for a sensor
 	_, err := SensorData(TESTSENSORIDX)
 	if err != nil {
 		t.Log("Unable to get sensor data", err)
 		t.Fail()
 	}
 
+	// test fetching selected data for a sensor
 	fp := SensorFields{Fields: TESTFIELDS}
-	_, err = SensorData(TESTSENSORIDX, fp)
+	sd, err := SensorData(TESTSENSORIDX, fp)
 	if err != nil {
 		t.Log("Unable to get sensor data with fields", err)
 		t.Fail()
 	}
+	t.Logf("SensorData:\n%v+\n", sd)
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -281,15 +280,12 @@ const (
 func SetAPIKey(k string) (KeyType, error) {
 	keyType, err := CheckAPIKey(k)
 	if err != nil {
-		log.Printf("Unable to CheckAPIKey: %v\n", err)
 		return APIKEYUNKNOWN, err
 	}
 
 	if keyType == APIKEYREAD {
-		log.Printf("Successfully set API read key\n")
 		apiReadKey = k
 	} else if keyType == APIKEYWRITE {
-		log.Printf("Successfully set API write key\n")
 		apiWriteKey = k
 	}
 
@@ -311,7 +307,6 @@ func CheckAPIKey(k string) (KeyType, error) {
 
 	req, err := http.NewRequest(http.MethodGet, URLKEYS, nil)
 	if err != nil {
-		log.Printf("Unable to create HTTP request: %s\n", err)
 		return keyType, err
 	}
 	req.Header.Add(APIKEYHEADER, k)
@@ -319,7 +314,6 @@ func CheckAPIKey(k string) (KeyType, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return keyType, err
 	}
 	defer resp.Body.Close()
@@ -332,14 +326,10 @@ func CheckAPIKey(k string) (KeyType, error) {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&keyTypeResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
 		return keyType, err
 	}
 
-	keyType = keyTypeResp.K
-	log.Printf("Extracted key type: %s\n", keyType)
-
-	return keyType, nil
+	return keyTypeResp.K, nil
 }
 
 // CreateGroup creates a persistent reference of a defined set of sensors on the PurpleAir service.
@@ -353,32 +343,34 @@ func CreateGroup(g string) (GroupID, error) {
 
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
-		log.Printf("Unable to marshal json body: %s\n", err)
 		return 0, err
 	}
 
 	req, err := setupCall(http.MethodPost, URLGROUPS, reqJSON)
 	if err != nil {
-		log.Printf("Unable to setup call: %s\n", err)
 		return 0, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return 0, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusCreated {
+		return 0, extractError(resp)
+	}
+
 	groupResp := struct {
+		V string  `json:"api_version"`
+		T int     `json:"time_stamp"`
 		G GroupID `json:"group_id"`
 	}{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&groupResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
 		return 0, err
 	}
 
@@ -393,31 +385,19 @@ func DeleteGroup(g GroupID) error {
 	url := fmt.Sprintf("%s/%d", URLGROUPS, g)
 	req, err := setupCall(http.MethodDelete, url, nil)
 	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
 		return err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return err
 	}
 	defer resp.Body.Close()
 
+	// if unexpected response, extract & return the error
 	if resp.StatusCode != http.StatusNoContent {
-		groupResp := struct {
-			E string `json:"error"`
-		}{}
-
-		decoder := json.NewDecoder(resp.Body)
-		err = decoder.Decode(&groupResp)
-		if err != nil {
-			log.Printf("Unable to decode HTTP response: %s\n", err)
-			return err
-		}
-
-		return errors.New(groupResp.E)
+		return extractError(resp)
 	}
 
 	return nil
@@ -429,30 +409,34 @@ func DeleteGroup(g GroupID) error {
 func ListGroups() ([]Group, error) {
 	req, err := setupCall(http.MethodGet, URLGROUPS, nil)
 	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, extractError(resp)
+	}
+
 	groupResp := struct {
-		Groups []Group `json:"groups"`
+		V string  `json:"api_version"`
+		T int     `json:"time_stamp"`
+		D int     `json:"data_time_stamp"`
+		G []Group `json:"groups"`
 	}{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&groupResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
 		return nil, err
 	}
 
-	return groupResp.Groups, nil
+	return groupResp.G, nil
 }
 
 // GroupDetails provides the list of member sensors defined for the specified group.
@@ -462,30 +446,35 @@ func GroupDetails(g GroupID) ([]Member, error) {
 	url := fmt.Sprintf("%s/%d", URLGROUPS, g)
 	req, err := setupCall(http.MethodGet, url, nil)
 	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, extractError(resp)
+	}
+
 	memberResp := struct {
-		Members []Member `json:"members"`
+		V string   `json:"api_version"`
+		T int      `json:"time_stamp"`
+		D int      `json:"data_time_stamp"`
+		G GroupID  `json:"group_id"`
+		M []Member `json:"members"`
 	}{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&memberResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
 		return nil, err
 	}
 
-	return memberResp.Members, nil
+	return memberResp.M, nil
 }
 
 // AddMember provides the SensorIndex interface solution to adding a sensor to a group.
@@ -508,7 +497,6 @@ func (s SensorIndex) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
-		log.Printf("Unable to marshal json body: %s\n", err)
 		return 0, err
 	}
 
@@ -535,7 +523,6 @@ func (s SensorID) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
-		log.Printf("Unable to marshal json body: %s\n", err)
 		return 0, err
 	}
 
@@ -548,17 +535,19 @@ func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
 	url := fmt.Sprintf(URLMEMBERS, g)
 	req, err := setupCall(http.MethodPost, url, reqJSON)
 	if err != nil {
-		log.Printf("Unable to setup call: %s\n", err)
 		return 0, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return 0, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return 0, extractError(resp)
+	}
 
 	memberResp := struct {
 		M MemberID `json:"member_id"`
@@ -567,7 +556,6 @@ func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&memberResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
 		return 0, err
 	}
 
@@ -581,31 +569,18 @@ func RemoveMember(m MemberID, g GroupID) error {
 	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
 	req, err := setupCall(http.MethodDelete, url, nil)
 	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
 		return err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusNoContent {
-		groupResp := struct {
-			E string `json:"error"`
-		}{}
-
-		decoder := json.NewDecoder(resp.Body)
-		err = decoder.Decode(&groupResp)
-		if err != nil {
-			log.Printf("Unable to decode HTTP response: %s\n", err)
-			return err
-		}
-
-		return errors.New(groupResp.E)
+		return extractError(resp)
 	}
 
 	return nil
@@ -636,7 +611,6 @@ func SensorData(s SensorIndex, f ...SensorFields) (*SensorInfo, error) {
 func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	req, err := setupCall(http.MethodGet, url, nil)
 	if err != nil {
-		log.Printf("Unable to setup API call: %s\n", err)
 		return nil, err
 	}
 
@@ -652,10 +626,13 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Unable to execute HTTP request: %s\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, extractError(resp)
+	}
 
 	sensorResp := struct {
 		S SensorInfo `json:"sensor"`
@@ -664,7 +641,6 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&sensorResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP body: %s\n", err)
 		return nil, err
 	}
 
@@ -703,14 +679,20 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 func extractError(r *http.Response) error {
 	errorResp := struct {
 		E string `json:"error"`
+		D string `json:"description"`
 	}{}
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&errorResp)
 	if err != nil {
-		log.Printf("Unable to decode HTTP error response: %s\n", err)
 		return err
 	}
 
-	return errors.New(errorResp.E)
+	// If there is an error response and description, use both. Otherwise just repor the error.
+	errMsg := errorResp.E
+	if errorResp.D != "" {
+		errMsg = fmt.Sprintf("%s: %s", errorResp.E, errorResp.D)
+	}
+
+	return errors.New(errMsg)
 }
