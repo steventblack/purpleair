@@ -550,6 +550,10 @@ func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
 	}
 
 	memberResp := struct {
+		V string   `json:"api_version"`
+		T int      `json:"time_stamp"`
+		D int      `json:"data_time_stamp"`
+		G GroupID  `json:"group_id"`
 		M MemberID `json:"member_id"`
 	}{}
 
@@ -635,6 +639,9 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	}
 
 	sensorResp := struct {
+		V string     `json:"api_version"`
+		T int        `json:"time_stamp"`
+		D int        `json:"data_time_stamp"`
 		S SensorInfo `json:"sensor"`
 	}{}
 
@@ -678,6 +685,8 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 // extractError handles an error response back from the API and returns an error
 func extractError(r *http.Response) error {
 	errorResp := struct {
+		V string `json:"api_version"`
+		T int    `json:"time_stamp"`
 		E string `json:"error"`
 		D string `json:"description"`
 	}{}
