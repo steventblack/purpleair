@@ -56,10 +56,10 @@ type GroupMember interface {
 // For bulk-sensor calls (MembersData, SensorsData), the Fields element
 // is required but all other params are optional.
 type SensorParams struct {
-	Fields   string   `json:"fields,omitempty"`         // comma-delimited list of sensor data fields to return
+	Fields   string   `json:"fields"`                   // comma-delimited list of sensor data fields to return
 	Loc      Location `json:"location_type,omitempty"`  // location: inside/outside
-	ReadKeys string   `json:"read_keys,omitempty"`      // key required for access to private devices
-	Show     string   `json:"show_only,omitempty"`      // return data only for sensorIndexes listed
+	ReadKeys string   `json:"read_keys,omitempty"`      // comma-delimited keys required for access to private devices
+	Show     string   `json:"show_only,omitempty"`      // return data only for comma-delimited sensorIndexes listed
 	Mod      int      `json:"modified_since,omitempty"` // return data only if updated since timestamp
 	MaxAge   int      `json:"max_age,omitempty"`        // return data only if updated within specifed seconds
 	LngNW    float64  `json:"nwlng,omitempty"`          // bounding box: provide NW and SE coordinates
@@ -654,6 +654,34 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	return &sensorResp.S, nil
 }
 
+func MembersData(g GroupID, p SensorParams) ([]SensorInfo, error) {
+	//	url := fmt.Sprintf(URLMEMBERS, g)
+
+	return nil, nil
+}
+
+func SensorsData(p SensorParams) ([]SensorInfo, error) {
+	// url := URLSENSORS
+
+	return nil, nil
+}
+
+// encodeSensorParams validates the SensorParams and JSON-encodes it if valid.
+// It returns a byte slice of the encoded params if successful, or else error.
+func encodeSensorParams(p SensorParams) ([]byte, error) {
+	// TODO: Consider validating fields here to ensure only legit values passed
+	if p.Fields == "" {
+		return nil, errors.New("No fields specified for sensor info")
+	}
+
+	b, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
 // setupCall performs common tasks that are prerequisite before calling the API.
 // It initializes a request object and adds the appropriate key (read or write) to the request.
 // It returns a request ready for execution or an error.
@@ -669,9 +697,7 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 			return nil, errors.New("PurpleAir read key is not set")
 		}
 		req.Header.Add(APIKEYHEADER, apiReadKey)
-	case "POST":
-		fallthrough
-	case "DELETE":
+	case "POST", "DELETE":
 		if len(apiWriteKey) == 0 {
 			return nil, errors.New("PurpleAir write key is not set")
 		}
