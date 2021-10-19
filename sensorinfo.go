@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 // Retype the sensor field labels to help enforce typing
@@ -90,11 +91,6 @@ func sensorsInfo(url string, sp SensorParams) (SensorDataSet, error) {
 		return nil, err
 	}
 
-	err = processParams(req, sp)
-	if err != nil {
-		return nil, err
-	}
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -169,9 +165,9 @@ func sensorsInfo(url string, sp SensorParams) (SensorDataSet, error) {
 // and GetSensorsData as GET requests, passing in the params as part of the
 // body is not an option. This converts the params to be properly encoded
 // as part of the query string.
-func processParams(r *http.Request, sp SensorParams) error {
+func addSensorParams(u *url.URL, sp SensorParams) error {
 	fieldsPresent := false
-	q := r.URL.Query()
+	q := u.Query()
 
 	for k, v := range sp {
 		switch k {
@@ -193,7 +189,7 @@ func processParams(r *http.Request, sp SensorParams) error {
 		return errors.New("Required parameter not found [fields]")
 	}
 
-	r.URL.RawQuery = q.Encode()
+	u.RawQuery = q.Encode()
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // Global variables for retaining the API access keys.
@@ -625,18 +626,45 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	return &sensorResp.S, nil
 }
 
-func MembersData(g GroupID, sp SensorParams) ([]SensorInfo, error) {
-	url := fmt.Sprintf(URLMEMBERS, g)
+// MembersData returns the information requested for the set (or subset)
+// of sensors within the specified Group. The SensorParams must specify
+// the elements requested in the "fields" parameter.
+// The return value is a map of key/value pairs for each field element
+// specified indexed by the sensor_index.
+func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
+	u, err := url.Parse(fmt.Sprintf(URLMEMBERS, g))
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := sensorsInfo(url, sp)
+	err = addSensorParams(u, sp)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sensorsInfo(u.String(), sp)
 
 	return nil, err
 }
 
-func SensorsData(sp SensorParams) ([]SensorInfo, error) {
-	url := URLSENSORS
+// SensorsData returns the information requested for the set
+// of sensors specified as a comma-delimited list of values for the
+// sensors_index parameter. The SensorParams must specify
+// the elements requested in the "fields" parameter.
+// The return value is a map of key/value pairs for each field element
+// specified indexed by the sensor_index.
+func SensorsData(sp SensorParams) (SensorDataSet, error) {
+	u, err := url.Parse(URLSENSORS)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := sensorsInfo(url, sp)
+	err = addSensorParams(u, sp)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sensorsInfo(u.String(), sp)
 
 	return nil, err
 }
