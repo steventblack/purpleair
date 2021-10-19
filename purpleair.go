@@ -52,22 +52,6 @@ type GroupMember interface {
 	AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error)
 }
 
-// SensorParams are options that can be passed in for customizing the sensor information returned.
-// For bulk-sensor calls (MembersData, SensorsData), the Fields element
-// is required but all other params are optional.
-type SensorParams struct {
-	Fields   string   `json:"fields"`                   // comma-delimited list of sensor data fields to return
-	Loc      Location `json:"location_type,omitempty"`  // location: inside/outside
-	ReadKeys string   `json:"read_keys,omitempty"`      // comma-delimited keys required for access to private devices
-	Show     string   `json:"show_only,omitempty"`      // return data only for comma-delimited sensorIndexes listed
-	Mod      int      `json:"modified_since,omitempty"` // return data only if updated since timestamp
-	MaxAge   int      `json:"max_age,omitempty"`        // return data only if updated within specifed seconds
-	LngNW    float64  `json:"nwlng,omitempty"`          // bounding box: provide NW and SE coordinates
-	LatNW    float64  `json:"nwlat,omitempty"`          // and return sensor info only for devices within the box
-	LngSE    float64  `json:"selng,omitempty"`
-	LatSE    float64  `json:"selat,omitempty"`
-}
-
 // SensorFields specify which fields are to be returned for single-sensor calls (MemberData, SensorData).
 // If omitted, then all available fields will be returned.
 type SensorFields struct {
@@ -256,21 +240,6 @@ const (
 
 // APIKEYHEADER is the HTTP Request header used to pass in the access key value.
 const APIKEYHEADER string = "X-API-Key"
-
-/*
-type Field string
-
-// Fields for sensor information. Not all fields may be available on all devices.
-// Sensor information can selectively return data for named fields, or all data if omitted.
-const (
-	Fields []Field = {"name", "icon", "model", "hardware", "location_type", "private",
-		"latitude", "longitude", "altitude", "position_rating", "led_brightness",
-		"firmware_version", "firmware_upgrade", "rssi", "uptime", "pa_latency",
-		"memory", "last_seen", "last_modified", "date_created", "channel_state",
-		"channel_flags", "channel_flags_manual", "channel_flags_auto", "confidence",
-		"confidence_manual", "confidence_auto"}
-)
-*/
 
 // SetAPIKey checks the validity and permissions of the provided access key string.
 // If the key is valid, it will be retained by the module for further calls.
@@ -622,7 +591,9 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	case 0:
 		// if nothing specified, then skip
 	case 1:
-		req.URL.Query().Add("fields", f[0].Fields)
+		q := req.URL.Query()
+		q.Add("fields", f[0].Fields)
+		req.URL.RawQuery = q.Encode()
 	default:
 		return nil, errors.New("Too many SensorFields specified (max 1)")
 	}
@@ -654,32 +625,20 @@ func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
 	return &sensorResp.S, nil
 }
 
-func MembersData(g GroupID, p SensorParams) ([]SensorInfo, error) {
-	//	url := fmt.Sprintf(URLMEMBERS, g)
+func MembersData(g GroupID, sp SensorParams) ([]SensorInfo, error) {
+	url := fmt.Sprintf(URLMEMBERS, g)
 
-	return nil, nil
+	_, err := sensorsInfo(url, sp)
+
+	return nil, err
 }
 
-func SensorsData(p SensorParams) ([]SensorInfo, error) {
-	// url := URLSENSORS
+func SensorsData(sp SensorParams) ([]SensorInfo, error) {
+	url := URLSENSORS
 
-	return nil, nil
-}
+	_, err := sensorsInfo(url, sp)
 
-// encodeSensorParams validates the SensorParams and JSON-encodes it if valid.
-// It returns a byte slice of the encoded params if successful, or else error.
-func encodeSensorParams(p SensorParams) ([]byte, error) {
-	// TODO: Consider validating fields here to ensure only legit values passed
-	if p.Fields == "" {
-		return nil, errors.New("No fields specified for sensor info")
-	}
-
-	b, err := json.Marshal(p)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return nil, err
 }
 
 // setupCall performs common tasks that are prerequisite before calling the API.
@@ -694,12 +653,12 @@ func setupCall(method string, url string, reqBody []byte) (*http.Request, error)
 	switch method {
 	case "GET":
 		if len(apiReadKey) == 0 {
-			return nil, errors.New("PurpleAir read key is not set")
+			return nil, errors.New("PurpleAir key not set [read]")
 		}
 		req.Header.Add(APIKEYHEADER, apiReadKey)
 	case "POST", "DELETE":
 		if len(apiWriteKey) == 0 {
-			return nil, errors.New("PurpleAir write key is not set")
+			return nil, errors.New("PurpleAir key not set [write]")
 		}
 		req.Header.Add(APIKEYHEADER, apiWriteKey)
 	}

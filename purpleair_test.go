@@ -16,7 +16,7 @@ var km map[string]string
 const (
 	TESTGROUP     string      = "testing_group"
 	TESTSENSORIDX SensorIndex = 118475
-	TESTFIELDS    string      = "sensor_index,name,location_type,hardware,latitude,longitude"
+	TESTFIELDS    string      = "sensor_index,name,location_type,hardware,latitude,longitude,rssi,model"
 )
 
 // Initialization of read & write keys used for API access
@@ -114,7 +114,6 @@ func TestGroups(t *testing.T) {
 		t.Log("Unable to CreateGroup", err)
 		t.Fail()
 	}
-	t.Logf("Created group %d\n", g)
 
 	// add a member by sensor_index
 	m, err := TESTSENSORIDX.AddMember(g)
@@ -122,7 +121,6 @@ func TestGroups(t *testing.T) {
 		t.Log("Unable to AddMember by SensorIndex", err)
 		t.Fail()
 	}
-	t.Logf("Added member %d to group %d\n", m, g)
 
 	// insert sleep to allow data to sync within PurpleAir
 	// and help smooth over race conditions within their infrastructure
@@ -135,7 +133,6 @@ func TestGroups(t *testing.T) {
 		t.Log("Unable ListGroups", err)
 		t.Fail()
 	}
-	t.Logf("Listed groups; %d groups found\n", len(gl))
 
 	foundGroup := false
 	for _, v := range gl {
@@ -145,7 +142,6 @@ func TestGroups(t *testing.T) {
 				t.Logf("Group name mismatch %s vs %s\n", TESTGROUP, v.Name)
 				t.Fail()
 			}
-			t.Logf("Found group %s listed for id %d\n", v.Name, v.ID)
 			break
 		}
 	}
@@ -161,13 +157,11 @@ func TestGroups(t *testing.T) {
 		t.Log("Unable to get GroupDetails", err)
 		t.Fail()
 	}
-	t.Logf("Got group details for %d; found %d members\n", g, len(ml))
 
 	foundMember := false
 	for _, v := range ml {
 		if v.ID == m {
 			foundMember = true
-			t.Logf("Found member %d as part of group %d\n", v.ID, g)
 			break
 		}
 	}
@@ -190,13 +184,20 @@ func TestGroups(t *testing.T) {
 		t.Fail()
 	}
 
+	var sp = make(SensorParams)
+	sp[SP_FIELDS] = TESTFIELDS
+	_, err = MembersData(599, sp)
+	if err != nil {
+		t.Log("Unable to get all member data", err)
+		t.Fail()
+	}
+
 	// remove the group member
 	err = RemoveMember(m, g)
 	if err != nil {
 		t.Logf("Unable to remove member %d from group %d\n", m, g)
 		t.Fail()
 	}
-	t.Logf("Removed member %d from group %d\n", m, g)
 
 	// delete the group
 	err = DeleteGroup(g)
@@ -204,7 +205,6 @@ func TestGroups(t *testing.T) {
 		t.Logf("Unable to DeleteGroup %d %s\n", g, err)
 		t.Fail()
 	}
-	t.Logf("Removed group %d\n", g)
 }
 
 // Suite of tests for retriving sensor info
@@ -224,4 +224,43 @@ func TestSensorInfo(t *testing.T) {
 		t.Fail()
 	}
 	t.Logf("SensorData:\n%v+\n", sd)
+}
+
+func TestSensorParams(t *testing.T) {
+	/*
+		// testing param block
+		var p = make(SensorParams)
+		p[SP_FIELDS] = "sensor_index,name,latitude,longitude,location_type,model"
+		p[SP_LOCATION] = OUTSIDE
+		p[SP_NWLNG] = 123.456
+
+		_, err := processParams(p)
+		if err != nil {
+			t.Log("Unable to process sensor params", err)
+			t.Fail()
+		}
+
+		// setup a params block without the required fields
+		var pf = make(SensorParams)
+		p[SP_LOCATION] = OUTSIDE
+		p[SP_NWLNG] = 123.456
+
+		_, err = processParams(pf)
+		if err == nil {
+			t.Log("Missing error for missing required 'fields' param")
+			t.Fail()
+		}
+
+		var pb = make(SensorParams)
+		p[SP_FIELDS] = "sensor_index,name,latitude,longitude,location_type,model"
+		p[SP_LOCATION] = OUTSIDE
+		p[SP_NWLNG] = 123.456
+		p["bogus"] = "this invalid key better throw an error"
+
+		_, err = processParams(pb)
+		if err == nil {
+			t.Log("Missing error for passing invalid parameter key")
+			t.Fail()
+		}
+	*/
 }
