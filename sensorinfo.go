@@ -85,8 +85,8 @@ type SensorDataSet map[int]SensorDataRow
 
 // Common code for multi-sensor data collection.
 // Applies to members of groups or other list of sensors
-func sensorsInfo(url string, sp SensorParams) (SensorDataSet, error) {
-	req, err := setupCall(http.MethodGet, url, nil)
+func sensorsInfo(url *url.URL, sp SensorParams) (SensorDataSet, error) {
+	req, err := setupCall(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err
 	}

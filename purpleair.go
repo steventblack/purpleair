@@ -642,9 +642,9 @@ func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
 		return nil, err
 	}
 
-	_, err = sensorsInfo(u.String(), sp)
+	d, err := sensorsInfo(u, sp)
 
-	return nil, err
+	return d, err
 }
 
 // SensorsData returns the information requested for the set
@@ -664,9 +664,9 @@ func SensorsData(sp SensorParams) (SensorDataSet, error) {
 		return nil, err
 	}
 
-	_, err = sensorsInfo(u.String(), sp)
+	d, err := sensorsInfo(u, sp)
 
-	return nil, err
+	return d, err
 }
 
 // setupCall performs common tasks that are prerequisite before calling the API.
