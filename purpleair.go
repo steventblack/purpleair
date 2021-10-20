@@ -561,69 +561,31 @@ func RemoveMember(m MemberID, g GroupID) error {
 }
 
 // MemberData returns the SensorInfo for a member of a group.
-// The optional SensorFields parameter can restrict the information returned to the named fields.
-// Omitting the SensorFields parameter will return all available information fields.
+// The SensorParams can restrict the information returned to the named fields.
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
-func MemberData(g GroupID, m MemberID, f ...SensorFields) (*SensorInfo, error) {
-	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
+// Note that if a subset of fields is specified, only that data will be returned.
+func MemberData(g GroupID, m MemberID, sp SensorParams) (*SensorInfo, error) {
+	u, err := url.Parse(fmt.Sprintf(URLMEMBERS+"/%d", g, m))
+	if err != nil {
+		return nil, err
+	}
 
-	return sensorDataCommon(url, f)
+	return sensorInfo(u, sp)
 }
 
 // SensorData returns the SensorInfo for the named SensorIndex.
-// The optional SensorFields parameter can restrict the information returned to the named fields.
-// Omitting the SensorFields parameter will return all available information fields.
+// The SensorParams can restrict the information returned to the named fields.
 // This call requires a key with read permissions to be set prior to calling.
 // On success, the SensorInfo will be returned, or else an error.
-func SensorData(s SensorIndex, f ...SensorFields) (*SensorInfo, error) {
-	url := fmt.Sprintf(URLSENSORS+"/%d", s)
-
-	return sensorDataCommon(url, f)
-}
-
-func sensorDataCommon(url string, f []SensorFields) (*SensorInfo, error) {
-	req, err := setupCall(http.MethodGet, url, nil)
+// Note that if a subset of fields is specified, only that data will be returned.
+func SensorData(s SensorIndex, sp SensorParams) (*SensorInfo, error) {
+	u, err := url.Parse(fmt.Sprintf(URLSENSORS+"/%d", s))
 	if err != nil {
 		return nil, err
 	}
 
-	switch len(f) {
-	case 0:
-		// if nothing specified, then skip
-	case 1:
-		q := req.URL.Query()
-		q.Add("fields", f[0].Fields)
-		req.URL.RawQuery = q.Encode()
-	default:
-		return nil, errors.New("Too many SensorFields specified (max 1)")
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, extractError(resp)
-	}
-
-	sensorResp := struct {
-		V string     `json:"api_version"`
-		T int        `json:"time_stamp"`
-		D int        `json:"data_time_stamp"`
-		S SensorInfo `json:"sensor"`
-	}{}
-
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&sensorResp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sensorResp.S, nil
+	return sensorInfo(u, sp)
 }
 
 // MembersData returns the information requested for the set (or subset)
@@ -637,20 +599,12 @@ func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
 		return nil, err
 	}
 
-	err = addSensorParams(u, sp)
-	if err != nil {
-		return nil, err
-	}
-
-	d, err := sensorsInfo(u, sp)
-
-	return d, err
+	return sensorsInfo(u, sp)
 }
 
 // SensorsData returns the information requested for the set
-// of sensors specified as a comma-delimited list of values for the
-// sensors_index parameter. The SensorParams must specify
-// the elements requested in the "fields" parameter.
+// of sensors specified by the SensorParam specificiations.
+// The SensorParams must specify the elements requested in the "fields" parameter.
 // The return value is a map of key/value pairs for each field element
 // specified indexed by the sensor_index.
 func SensorsData(sp SensorParams) (SensorDataSet, error) {
@@ -659,14 +613,7 @@ func SensorsData(sp SensorParams) (SensorDataSet, error) {
 		return nil, err
 	}
 
-	err = addSensorParams(u, sp)
-	if err != nil {
-		return nil, err
-	}
-
-	d, err := sensorsInfo(u, sp)
-
-	return d, err
+	return sensorsInfo(u, sp)
 }
 
 // setupCall performs common tasks that are prerequisite before calling the API.

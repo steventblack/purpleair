@@ -171,14 +171,16 @@ func TestGroups(t *testing.T) {
 	}
 
 	// fetch a group member's data
-	_, err = MemberData(g, m)
+	var mp = make(SensorParams)
+	_, err = MemberData(g, m, mp)
 	if err != nil {
 		t.Log("Unable to get member data", err)
 		t.Fail()
 	}
 
-	fp := SensorFields{Fields: TESTFIELDS}
-	_, err = MemberData(g, m, fp)
+	//fp := SensorFields{Fields: TESTFIELDS}
+	mp[SP_FIELDS] = TESTFIELDS
+	_, err = MemberData(g, m, mp)
 	if err != nil {
 		t.Log("Unable to get member data with fields", err)
 		t.Fail()
@@ -210,15 +212,18 @@ func TestGroups(t *testing.T) {
 // Suite of tests for retriving sensor info
 func TestSensorInfo(t *testing.T) {
 	// test fetching all data for a sensor
-	_, err := SensorData(TESTSENSORIDX)
+	var mp = make(SensorParams)
+	sd, err := SensorData(TESTSENSORIDX, mp)
 	if err != nil {
 		t.Log("Unable to get sensor data", err)
 		t.Fail()
 	}
+	t.Logf("SensorData (all):\n%v+\n", sd)
 
 	// test fetching selected data for a sensor
-	fp := SensorFields{Fields: TESTFIELDS}
-	sd, err := SensorData(TESTSENSORIDX, fp)
+	//	fp := SensorFields{Fields: TESTFIELDS}
+	mp[SP_FIELDS] = TESTFIELDS
+	sd, err = SensorData(TESTSENSORIDX, mp)
 	if err != nil {
 		t.Log("Unable to get sensor data with fields", err)
 		t.Fail()
