@@ -57,52 +57,6 @@ func DataFields() []DataField {
 		"primary_id_b", "primary_key_b", "secondary_id_b", "secondary_key_b"}
 }
 
-// Common code for single sensor queries that returns the full
-// set of data available from a sensor in a SensorInfo struct.
-func sensorInfo(url *url.URL, sp SensorParams) (*SensorInfo, error) {
-	q := url.Query()
-	for k, v := range sp {
-		switch k {
-		case SP_FIELDS, SP_READKEY:
-			q.Add(string(k), fmt.Sprintf("%s", v))
-		default:
-			// ignore anything else
-		}
-	}
-	url.RawQuery = q.Encode()
-
-	req, err := setupCall(http.MethodGet, url.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, extractError(resp)
-	}
-
-	sensorResp := struct {
-		V string     `json:"api_version"`
-		T int        `json:"time_stamp"`
-		D int        `json:"data_time_stamp"`
-		S SensorInfo `json:"sensor"`
-	}{}
-
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&sensorResp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sensorResp.S, nil
-}
-
 // Retype the sensor query param to help enforce typing
 type SensorParam string
 
@@ -130,21 +84,55 @@ type SensorParams map[SensorParam]interface{}
 type SensorDataRow map[DataField]interface{}
 type SensorDataSet map[int]SensorDataRow
 
+// Common code for single sensor queries that returns the full
+// set of data available from a sensor in a SensorInfo struct.
+func sensorInfo(u *url.URL, sp SensorParams) (*SensorInfo, error) {
+	q := u.Query()
+	for k, v := range sp {
+		switch k {
+		case SP_FIELDS, SP_READKEY:
+			q.Add(string(k), fmt.Sprintf("%s", v))
+		default:
+			// ignore anything else
+		}
+	}
+	u.RawQuery = q.Encode()
+
+	resp, err := doRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, extractError(resp)
+	}
+
+	sensorResp := struct {
+		V string     `json:"api_version"`
+		T int        `json:"time_stamp"`
+		D int        `json:"data_time_stamp"`
+		S SensorInfo `json:"sensor"`
+	}{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&sensorResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sensorResp.S, nil
+}
+
 // Common code for multi-sensor data collection.
 // Applies to members of groups or other list of sensors
-func sensorsInfo(url *url.URL, sp SensorParams) (SensorDataSet, error) {
-	err := addSensorParams(url, sp)
+func sensorsInfo(u *url.URL, sp SensorParams) (SensorDataSet, error) {
+	err := addSensorParams(u, sp)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := setupCall(http.MethodGet, url.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}

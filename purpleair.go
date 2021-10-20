@@ -316,15 +316,14 @@ func CreateGroup(g string) (GroupID, error) {
 		return 0, err
 	}
 
-	req, err := setupCall(http.MethodPost, URLGROUPS, reqJSON)
+	u, err := url.Parse(URLGROUPS)
 	if err != nil {
 		return 0, err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodPost, u, reqJSON)
 	if err != nil {
-		return 0, err
+		return 0, nil
 	}
 	defer resp.Body.Close()
 
@@ -352,14 +351,12 @@ func CreateGroup(g string) (GroupID, error) {
 // This call requires a key with write permissions to be set prior to calling.
 // An error will be returned on failure, or else nil
 func DeleteGroup(g GroupID) error {
-	url := fmt.Sprintf("%s/%d", URLGROUPS, g)
-	req, err := setupCall(http.MethodDelete, url, nil)
+	u, err := url.Parse(fmt.Sprintf("%s/%d", URLGROUPS, g))
 	if err != nil {
 		return err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodDelete, u, nil)
 	if err != nil {
 		return err
 	}
@@ -377,13 +374,12 @@ func DeleteGroup(g GroupID) error {
 // This call requires a key with read permissions to be set prior to calling.
 // The list of groups will be returned on success, or else an error.
 func ListGroups() ([]Group, error) {
-	req, err := setupCall(http.MethodGet, URLGROUPS, nil)
+	u, err := url.Parse(URLGROUPS)
 	if err != nil {
 		return nil, err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -413,14 +409,12 @@ func ListGroups() ([]Group, error) {
 // This call requires a key with read permissions to be set prior to calling.
 // The list of members will be returned on success, or else an error.
 func GroupDetails(g GroupID) ([]Member, error) {
-	url := fmt.Sprintf("%s/%d", URLGROUPS, g)
-	req, err := setupCall(http.MethodGet, url, nil)
+	u, err := url.Parse(fmt.Sprintf("%s/%d", URLGROUPS, g))
 	if err != nil {
 		return nil, err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -502,14 +496,12 @@ func (s SensorID) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 // addMember is the private function for handling the common code for member addition.
 // Both the SensorID and SensorIndex versions of AddMember rely on this.
 func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
-	url := fmt.Sprintf(URLMEMBERS, g)
-	req, err := setupCall(http.MethodPost, url, reqJSON)
+	u, err := url.Parse(fmt.Sprintf(URLMEMBERS, g))
 	if err != nil {
 		return 0, err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodPost, u, reqJSON)
 	if err != nil {
 		return 0, err
 	}
@@ -540,14 +532,12 @@ func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
 // This call requires a key with write permissions to be set prior to calling.
 // On success, nil will be returned or else an error.
 func RemoveMember(m MemberID, g GroupID) error {
-	url := fmt.Sprintf(URLMEMBERS+"/%d", g, m)
-	req, err := setupCall(http.MethodDelete, url, nil)
+	u, err := url.Parse(fmt.Sprintf(URLMEMBERS+"/%d", g, m))
 	if err != nil {
 		return err
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := doRequest(http.MethodDelete, u, nil)
 	if err != nil {
 		return err
 	}
@@ -616,30 +606,40 @@ func SensorsData(sp SensorParams) (SensorDataSet, error) {
 	return sensorsInfo(u, sp)
 }
 
-// setupCall performs common tasks that are prerequisite before calling the API.
-// It initializes a request object and adds the appropriate key (read or write) to the request.
-// It returns a request ready for execution or an error.
-func setupCall(method string, url string, reqBody []byte) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(reqBody))
+// doRequest creates and executes the http request for the PurpleAir API.
+// Depending on the method specified, it appends the appropriate access key required
+// as well as setting the content-type. (read key for GET, write key for POST, DELETE)
+// It returns the response or an error. When finished processing the response, the
+// body must be closed.
+func doRequest(m string, u *url.URL, b []byte) (*http.Response, error) {
+	req, err := http.NewRequest(m, u.String(), bytes.NewBuffer(b))
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Content-Type", "application/json")
 
-	switch method {
-	case "GET":
+	switch m {
+	case http.MethodGet:
 		if len(apiReadKey) == 0 {
 			return nil, errors.New("PurpleAir key not set [read]")
 		}
 		req.Header.Add(APIKEYHEADER, apiReadKey)
-	case "POST", "DELETE":
+	case http.MethodPost, http.MethodDelete:
 		if len(apiWriteKey) == 0 {
 			return nil, errors.New("PurpleAir key not set [write]")
 		}
 		req.Header.Add(APIKEYHEADER, apiWriteKey)
+	default:
+		return nil, fmt.Errorf("Unexpected request method [%s]", m)
 	}
-	req.Header.Add("Content-Type", "application/json")
 
-	return req, nil
+	c := &http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 // extractError handles an error response back from the API and returns an error
