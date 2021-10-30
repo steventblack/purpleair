@@ -5,8 +5,6 @@ type SensorIndex int  // uniquely identifies a sensor within the PurpleAir servi
 type SensorID string  // unique identifier of a sensor found on its label
 type GroupID int      // unique identifier of a collection of sensors within the PurpleAir service
 type MemberID int     // unique identifier of a sensor within a specific group defined in the PurpleAir service
-type Location int     // enables typechecking on defined location values
-type Privacy int      // setting for a sensor indicating public or private
 type ChannelState int // States for the sensor data channel availability
 type ChannelFlag int  // Flags for the sensor data channels
 
@@ -214,16 +212,22 @@ const (
 	contentTypeJSON   string = "application/json"
 )
 
-// Defined location values
+// Sensor location values.
+// Retyped int for better type-checking
+type Location int
+
 const (
-	OUTSIDE Location = 0
-	INSIDE  Location = 1
+	LocOutside Location = 0
+	LocInside           = 1
 )
 
-// Defined privacy values
+// Sensor information privacy values.
+// Retyped int for better type-checking
+type Privacy int
+
 const (
-	PUBLIC  Privacy = 0
-	PRIVATE Privacy = 1
+	SensorPublic  Privacy = 0
+	SensorPrivate         = 1
 )
 
 // Defined channel states
