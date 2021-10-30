@@ -1,21 +1,12 @@
 package purpleair
 
+import (
+	"encoding/json"
+	"time"
+)
+
 type SensorIndex int // uniquely identifies a sensor within the PurpleAir service
 type SensorID string // unique identifier of a sensor found on its label
-type GroupID int     // unique identifier of a collection of sensors within the PurpleAir service
-type MemberID int    // unique identifier of a sensor within a specific group defined in the PurpleAir service
-
-type Group struct {
-	ID         GroupID `json:"id"`
-	Name       string  `json:"name"`
-	CreatedUTC int     `json:"created"`
-}
-
-type Member struct {
-	ID         MemberID    `json:"id"`
-	Index      SensorIndex `json:"sensor_index"`
-	CreatedUTC int         `json:"created"`
-}
 
 // Private sensors must specify the owner's email and location in order to be accessed.
 // Repeated failures to provide correct values for a private sensor may result in access key suspension.
@@ -216,6 +207,73 @@ const (
 	KeyReadDisabled          = "READ_DISABLED"
 	KeyWriteDisabled         = "WRITE_DISABLED"
 )
+
+// Unique identifier assigned by PurpleAir to a collection of sensors
+// Retyped into for better type-checking.
+type GroupID int
+type Group struct {
+	ID      GroupID   `json:"id"`
+	Name    string    `json:"name"`
+	Created time.Time `json:"created"`
+}
+
+// Custom code for unmarshaling Group structs.
+// Converts the raw ID into GroupID and epoch timestamp to Go time.
+func (g *Group) UnmarshalJSON(data []byte) error {
+	type Shadow Group
+	tmp := struct {
+		ID      int `json:"id"`
+		Created int `json:"created"`
+		*Shadow
+	}{
+		Shadow: (*Shadow)(g),
+	}
+
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+
+	g.ID = GroupID(tmp.ID)
+	g.Created = time.Unix(int64(tmp.Created), 0)
+
+	return nil
+}
+
+// Unique identifier assigned by PurpleAir to a sensor within a Group.
+// MemberIDs are valid references only within the specified Group.
+// Retyped int for better type-checking.
+type MemberID int
+type Member struct {
+	ID      MemberID    `json:"id"`
+	Index   SensorIndex `json:"sensor_index"`
+	Created time.Time   `json:"created"`
+}
+
+// Custom code for unmashaling Member structs.
+// Converts the raw ID into MemberID and epocy timestamp to Go time.
+func (m *Member) UnmarshalJSON(data []byte) error {
+	type Shadow Member
+	tmp := struct {
+		ID      int `json:"id"`
+		Index   int `json:"sensor_index"`
+		Created int `json:"created"`
+		*Shadow
+	}{
+		Shadow: (*Shadow)(m),
+	}
+
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+
+	m.ID = MemberID(tmp.ID)
+	m.Index = SensorIndex(tmp.Index)
+	m.Created = time.Unix(int64(tmp.Created), 0)
+
+	return nil
+}
 
 // Sensor location values.
 // Retyped int for better type-checking.

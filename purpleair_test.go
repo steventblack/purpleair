@@ -41,7 +41,7 @@ func TestKeys(t *testing.T) {
 		t.Log("Unable to CheckAPIKey", err)
 		t.Fail()
 	}
-	if kt != APIKEYREAD {
+	if kt != KeyRead {
 		t.Log("Expected read key, got", kt)
 		t.Fail()
 	}
@@ -52,7 +52,7 @@ func TestKeys(t *testing.T) {
 		t.Log("Unable to CheckAPIKey", err)
 		t.Fail()
 	}
-	if kt != APIKEYWRITE {
+	if kt != KeyWrite {
 		t.Log("Expected write key, got", kt)
 		t.Fail()
 	}
@@ -63,7 +63,7 @@ func TestKeys(t *testing.T) {
 		t.Log("Missing error for bogus key on CheckAPIKey")
 		t.Fail()
 	}
-	if kt != APIKEYUNKNOWN {
+	if kt != KeyUnknown {
 		t.Log("Expected unknown key, got", kt)
 		t.Fail()
 	}
@@ -74,7 +74,7 @@ func TestKeys(t *testing.T) {
 		t.Log("Unable to SetAPIKey", err)
 		t.Fail()
 	}
-	if kt != APIKEYREAD {
+	if kt != KeyRead {
 		t.Log("Expected read key, got", kt)
 		t.Fail()
 	}
@@ -85,7 +85,7 @@ func TestKeys(t *testing.T) {
 		t.Log("Unable to SetAPIKey", err)
 		t.Fail()
 	}
-	if kt != APIKEYWRITE {
+	if kt != KeyWrite {
 		t.Log("Expected write key, got", kt)
 		t.Fail()
 	}
@@ -96,7 +96,7 @@ func TestKeys(t *testing.T) {
 		t.Log("Missing error for bogus key on SetAPIKey")
 		t.Fail()
 	}
-	if kt != APIKEYUNKNOWN {
+	if kt != KeyUnknown {
 		t.Log("Expected unknown key, got", kt)
 		t.Fail()
 	}
@@ -179,7 +179,7 @@ func TestGroups(t *testing.T) {
 	}
 
 	//fp := SensorFields{Fields: TESTFIELDS}
-	mp[SP_FIELDS] = TESTFIELDS
+	mp[SensorParamFields] = TESTFIELDS
 	_, err = MemberData(g, m, mp)
 	if err != nil {
 		t.Log("Unable to get member data with fields", err)
@@ -187,7 +187,7 @@ func TestGroups(t *testing.T) {
 	}
 
 	var sp = make(SensorParams)
-	sp[SP_FIELDS] = TESTFIELDS
+	sp[SensorParamFields] = TESTFIELDS
 	_, err = MembersData(599, sp)
 	if err != nil {
 		t.Log("Unable to get all member data", err)
@@ -222,7 +222,7 @@ func TestSensorInfo(t *testing.T) {
 
 	// test fetching selected data for a sensor
 	//	fp := SensorFields{Fields: TESTFIELDS}
-	mp[SP_FIELDS] = TESTFIELDS
+	mp[SensorParamFields] = TESTFIELDS
 	sd, err = SensorData(TESTSENSORIDX, mp)
 	if err != nil {
 		t.Log("Unable to get sensor data with fields", err)
@@ -235,9 +235,9 @@ func TestSensorParams(t *testing.T) {
 	/*
 		// testing param block
 		var p = make(SensorParams)
-		p[SP_FIELDS] = "sensor_index,name,latitude,longitude,location_type,model"
-		p[SP_LOCATION] = OUTSIDE
-		p[SP_NWLNG] = 123.456
+		p[SensorParamFields] = "sensor_index,name,latitude,longitude,location_type,model"
+		p[SensorParamLocation] = OUTSIDE
+		p[SensorParamNWLong] = 123.456
 
 		_, err := processParams(p)
 		if err != nil {
@@ -247,8 +247,8 @@ func TestSensorParams(t *testing.T) {
 
 		// setup a params block without the required fields
 		var pf = make(SensorParams)
-		p[SP_LOCATION] = OUTSIDE
-		p[SP_NWLNG] = 123.456
+		p[SensorParamLocation] = OUTSIDE
+		p[SensorParamNWLong] = 123.456
 
 		_, err = processParams(pf)
 		if err == nil {
@@ -257,9 +257,9 @@ func TestSensorParams(t *testing.T) {
 		}
 
 		var pb = make(SensorParams)
-		p[SP_FIELDS] = "sensor_index,name,latitude,longitude,location_type,model"
-		p[SP_LOCATION] = OUTSIDE
-		p[SP_NWLNG] = 123.456
+		p[SensorParamFields] = "sensor_index,name,latitude,longitude,location_type,model"
+		p[SensorParamLocation] = OUTSIDE
+		p[SensorParamNWLong] = 123.456
 		p["bogus"] = "this invalid key better throw an error"
 
 		_, err = processParams(pb)
