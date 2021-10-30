@@ -29,16 +29,38 @@ type SensorFields struct {
 	Fields string `json:"fields,omitempty"` // comma-delimited list of sensor data fields to return (return all if omitted)
 }
 
-// Collection of averaged statistics for the sensor channel
+// Collection of averaged statistics for the sensor channel.
+// Available as part of the SensorInfo information.
 type SensorStats struct {
-	PM_2_5        float64 `json:"pm2.5"`
-	PM_2_5_10Min  float64 `json:"pm2.5_10minute"`
-	PM_2_5_30Min  float64 `json:"pm2.5_30minute"`
-	PM_2_5_60Min  float64 `json:"pm2.5_60minute"`
-	PM_2_5_6Hour  float64 `json:"pm2.5_6hour"`
-	PM_2_5_24Hour float64 `json:"pm2.5_24hour"`
-	PM_2_5_1Week  float64 `json:"pm2.5_1week"`
-	Timestamp     int     `json:"time_stamp"`
+	PM_2_5        float64   `json:"pm2.5"`
+	PM_2_5_10Min  float64   `json:"pm2.5_10minute"`
+	PM_2_5_30Min  float64   `json:"pm2.5_30minute"`
+	PM_2_5_60Min  float64   `json:"pm2.5_60minute"`
+	PM_2_5_6Hour  float64   `json:"pm2.5_6hour"`
+	PM_2_5_24Hour float64   `json:"pm2.5_24hour"`
+	PM_2_5_1Week  float64   `json:"pm2.5_1week"`
+	Timestamp     time.Time `json:"time_stamp"`
+}
+
+// Custom code for unmarshaling SensorStats structs.
+// Converts the epoch timestamp to Go time.
+func (s *SensorStats) UnmarshalJSON(data []byte) error {
+	type Shadow SensorStats
+	tmp := struct {
+		Timestamp int `json:"time_stamp"`
+		*Shadow
+	}{
+		Shadow: (*Shadow)(s),
+	}
+
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+
+	s.Timestamp = time.Unix(int64(tmp.Timestamp), 0)
+
+	return nil
 }
 
 // SensorInfo is the data response to a sensor query.
@@ -163,17 +185,6 @@ type SensorInfo struct {
 	SecondaryID_B   int          `json:"secondary_id_b,omitempty"`
 	SecondaryKey_B  string       `json:"secondary_key_b,omitempty"`
 }
-
-// Retype the sensor field labels to help enforce typing
-type DataField string
-
-// Map of provide sensor query params. In order to avoid misinterpretation
-// of Go's default values, only explicit params pertinent for the query
-// should be specified. (i.e. If a key isn't relevant for the query, then
-// don't include the key in the map.)
-type SensorParams map[SensorParam]interface{}
-type SensorDataRow map[DataField]interface{}
-type SensorDataSet map[int]SensorDataRow
 
 const (
 	// keyHeader is the HTTP Request header used to pass in the access key value.
@@ -317,6 +328,17 @@ const (
 	ChannelFlagDownB               = 2 // channel B sensors downgrade
 	ChannelFlagDownAll             = 3 // both channel A & B sensors downgrade
 )
+
+// Retype the sensor field labels to help enforce typing
+type DataField string
+
+// Map of provide sensor query params. In order to avoid misinterpretation
+// of Go's default values, only explicit params pertinent for the query
+// should be specified. (i.e. If a key isn't relevant for the query, then
+// don't include the key in the map.)
+type SensorParams map[SensorParam]interface{}
+type SensorDataRow map[DataField]interface{}
+type SensorDataSet map[int]SensorDataRow
 
 // Query parameters that can refine the selection or data fields returned
 // from single or multi-sensor requests.
