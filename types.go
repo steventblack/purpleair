@@ -176,9 +176,6 @@ type SensorInfo struct {
 // Retype the sensor field labels to help enforce typing
 type DataField string
 
-// Retype the sensor query param to help enforce typing
-type SensorParam string
-
 // Map of provide sensor query params. In order to avoid misinterpretation
 // of Go's default values, only explicit params pertinent for the query
 // should be specified. (i.e. If a key isn't relevant for the query, then
@@ -186,20 +183,6 @@ type SensorParam string
 type SensorParams map[SensorParam]interface{}
 type SensorDataRow map[DataField]interface{}
 type SensorDataSet map[int]SensorDataRow
-
-// KeyTypes as returned from PurpleAir.
-// A key can be checked with the CheckAPIKey function.
-// Valid read & write keys are required for full API access.
-// Retyped string for better type-checking.
-type KeyType string
-
-const (
-	KeyUnknown       KeyType = "UNKNOWN"
-	KeyRead                  = "READ"
-	KeyWrite                 = "WRITE"
-	KeyReadDisabled          = "READ_DISABLED"
-	KeyWriteDisabled         = "WRITE_DISABLED"
-)
 
 const (
 	// keyHeader is the HTTP Request header used to pass in the access key value.
@@ -220,8 +203,22 @@ const (
 	urlSensors string = "https://api.purpleair.com/v1/sensors"
 )
 
+// KeyTypes as returned from PurpleAir.
+// A key can be checked with the CheckAPIKey function.
+// Valid read & write keys are required for full API access.
+// Retyped string for better type-checking.
+type KeyType string
+
+const (
+	KeyUnknown       KeyType = "UNKNOWN"
+	KeyRead                  = "READ"
+	KeyWrite                 = "WRITE"
+	KeyReadDisabled          = "READ_DISABLED"
+	KeyWriteDisabled         = "WRITE_DISABLED"
+)
+
 // Sensor location values.
-// Retyped int for better type-checking
+// Retyped int for better type-checking.
 type Location int
 
 const (
@@ -230,7 +227,7 @@ const (
 )
 
 // Sensor information privacy values.
-// Retyped int for better type-checking
+// Retyped int for better type-checking.
 type Privacy int
 
 const (
@@ -240,6 +237,7 @@ const (
 
 // Sensor particulate measurement data channel availability. Many sensors
 // have redundant data channels in order to improve the reliability of their readings.
+// Retyped int for better type-checking.
 type ChannelState int
 
 const (
@@ -252,6 +250,7 @@ const (
 // Sensor data channel status. Sensors may indicate problems with the
 // data quality by marking a data channel as downgraded. This may be due
 // to defect or transient events (e.g. bug crawling on the sensor)
+// Retyped int for better type-checking.
 type ChannelFlag int
 
 const (
@@ -259,4 +258,23 @@ const (
 	ChannelFlagDownA               = 1 // channel A sensors downgraded
 	ChannelFlagDownB               = 2 // channel B sensors downgrade
 	ChannelFlagDownAll             = 3 // both channel A & B sensors downgrade
+)
+
+// Query parameters that can refine the selection or data fields returned
+// from single or multi-sensor requests.
+// Retyped string for better type-checking.
+type SensorParam string
+
+const (
+	SensorParamFields   SensorParam = "fields"
+	SensorParamLocation             = "location_type"
+	SensorParamReadKey              = "read_key"  // used for single-sensor calls
+	SensorParamReadKeys             = "read_keys" // used for multi-sensor calls
+	SensorParamShowOnly             = "show_only"
+	SensorParamModTime              = "modified_since"
+	SensorParamMaxAge               = "max_age"
+	SensorParamNWLong               = "nwlng"
+	SensorParamNWLat                = "nwlat"
+	SensorParamSELong               = "selng"
+	SensorParamSELat                = "selat"
 )

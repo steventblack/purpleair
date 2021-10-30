@@ -54,29 +54,13 @@ func DataFields() []DataField {
 		"primary_id_b", "primary_key_b", "secondary_id_b", "secondary_key_b"}
 }
 
-// Defined list of sensor query keys. Each key expects an
-// appropriately typed value.
-const (
-	SP_FIELDS   SensorParam = "fields"
-	SP_LOCATION SensorParam = "location_type"
-	SP_READKEY  SensorParam = "read_key"  // used for single-sensor calls
-	SP_READKEYS SensorParam = "read_keys" // used for multi-sensor calls
-	SP_SHOWONLY SensorParam = "show_only"
-	SP_MODTIME  SensorParam = "modified_since"
-	SP_MAXAGE   SensorParam = "max_age"
-	SP_NWLNG    SensorParam = "nwlng"
-	SP_NWLAT    SensorParam = "nwlat"
-	SP_SELNG    SensorParam = "selng"
-	SP_SELAT    SensorParam = "selat"
-)
-
 // Common code for single sensor queries that returns the full
 // set of data available from a sensor in a SensorInfo struct.
 func sensorInfo(u *url.URL, sp SensorParams) (*SensorInfo, error) {
 	q := u.Query()
 	for k, v := range sp {
 		switch k {
-		case SP_FIELDS, SP_READKEY:
+		case SensorParamFields, SensorParamReadKey:
 			q.Add(string(k), fmt.Sprintf("%s", v))
 		default:
 			// ignore anything else
@@ -197,14 +181,14 @@ func addSensorParams(u *url.URL, sp SensorParams) error {
 
 	for k, v := range sp {
 		switch k {
-		case SP_FIELDS:
+		case SensorParamFields:
 			fieldsPresent = true
 			fallthrough
-		case SP_READKEYS, SP_SHOWONLY:
+		case SensorParamReadKeys, SensorParamShowOnly:
 			q.Add(string(k), fmt.Sprintf("%s", v))
-		case SP_LOCATION, SP_MODTIME, SP_MAXAGE:
+		case SensorParamLocation, SensorParamModTime, SensorParamMaxAge:
 			q.Add(string(k), fmt.Sprintf("%d", v))
-		case SP_NWLNG, SP_NWLAT, SP_SELNG, SP_SELAT:
+		case SensorParamNWLong, SensorParamNWLat, SensorParamSELong, SensorParamSELat:
 			q.Add(string(k), fmt.Sprintf("%f", v))
 		default:
 			return fmt.Errorf("Unexpected sensor param specified [%s]", k)
