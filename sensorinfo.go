@@ -9,9 +9,6 @@ import (
 	"net/url"
 )
 
-// Retype the sensor field labels to help enforce typing
-type DataField string
-
 // Helper function returning list of all available sensor fields for
 // accessing sensor information. Wrapping in this manner to provide
 // better const control given Go doesn't support const slices.
@@ -57,9 +54,6 @@ func DataFields() []DataField {
 		"primary_id_b", "primary_key_b", "secondary_id_b", "secondary_key_b"}
 }
 
-// Retype the sensor query param to help enforce typing
-type SensorParam string
-
 // Defined list of sensor query keys. Each key expects an
 // appropriately typed value.
 const (
@@ -75,14 +69,6 @@ const (
 	SP_SELNG    SensorParam = "selng"
 	SP_SELAT    SensorParam = "selat"
 )
-
-// Map of provide sensor query params. In order to avoid misinterpretation
-// of Go's default values, only explicit params pertinent for the query
-// should be specified. (i.e. If a key isn't relevant for the query, then
-// don't include the key in the map.)
-type SensorParams map[SensorParam]interface{}
-type SensorDataRow map[DataField]interface{}
-type SensorDataSet map[int]SensorDataRow
 
 // Common code for single sensor queries that returns the full
 // set of data available from a sensor in a SensorInfo struct.
