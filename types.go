@@ -1,12 +1,9 @@
 package purpleair
 
-type KeyType string   // maps the response from PurpleAir when checking the validity and permissions
-type SensorIndex int  // uniquely identifies a sensor within the PurpleAir service
-type SensorID string  // unique identifier of a sensor found on its label
-type GroupID int      // unique identifier of a collection of sensors within the PurpleAir service
-type MemberID int     // unique identifier of a sensor within a specific group defined in the PurpleAir service
-type ChannelState int // States for the sensor data channel availability
-type ChannelFlag int  // Flags for the sensor data channels
+type SensorIndex int // uniquely identifies a sensor within the PurpleAir service
+type SensorID string // unique identifier of a sensor found on its label
+type GroupID int     // unique identifier of a collection of sensors within the PurpleAir service
+type MemberID int    // unique identifier of a sensor within a specific group defined in the PurpleAir service
 
 type Group struct {
 	ID         GroupID `json:"id"`
@@ -193,6 +190,9 @@ type SensorDataSet map[int]SensorDataRow
 // KeyTypes as returned from PurpleAir.
 // A key can be checked with the CheckAPIKey function.
 // Valid read & write keys are required for full API access.
+// Retyped string for better type-checking.
+type KeyType string
+
 const (
 	KeyUnknown       KeyType = "UNKNOWN"
 	KeyRead                  = "READ"
@@ -204,12 +204,20 @@ const (
 const (
 	// keyHeader is the HTTP Request header used to pass in the access key value.
 	// The value for the keyHeader requires the read key for GET requests and the
-	// write key for POST or DELETE requests.
+	// write key for POST, PUT, or DELETE requests.
 	keyHeader string = "X-API-Key"
 
 	// Set the HTTP headers for the content type for JSON.
 	contentTypeHeader string = "Content-Type"
 	contentTypeJSON   string = "application/json"
+)
+
+// PurpleAir API paths
+const (
+	urlKeys    string = "https://api.purpleair.com/v1/keys"
+	urlGroups  string = "https://api.purpleair.com/v1/groups"
+	urlMembers string = "https://api.purpleair.com/v1/groups/%d/members"
+	urlSensors string = "https://api.purpleair.com/v1/sensors"
 )
 
 // Sensor location values.
@@ -230,26 +238,25 @@ const (
 	SensorPrivate         = 1
 )
 
-// Defined channel states
+// Sensor particulate measurement data channel availability. Many sensors
+// have redundant data channels in order to improve the reliability of their readings.
+type ChannelState int
+
 const (
-	PM_NONE ChannelState = 0 // no PM sensors detected
-	PM_A    ChannelState = 1 // PM sensor only on channel A
-	PM_B    ChannelState = 2 // PM sensor only on channel B
-	PM_ALL  ChannelState = 3 // PM sensors on both channel A & B
+	ChannelStateNone ChannelState = 0 // no PM sensors detected
+	ChannelStateA                 = 1 // PM sensor only on channel A
+	ChannelStateB                 = 2 // PM sensor only on channel B
+	ChannelStateAll               = 3 // PM sensors on both channels A & B
 )
 
-// Defined channel flags
-const (
-	NORMAL         ChannelFlag = 0 // no sensors marked as downgraded
-	DOWNGRADED_A   ChannelFlag = 1 // channel A sensors downgraded
-	DOWNGRADED_B   ChannelFlag = 2 // channel B sensors downgraded
-	DOWNGRADED_ALL ChannelFlag = 3 // both channel A & B sensors downgraded
-)
+// Sensor data channel status. Sensors may indicate problems with the
+// data quality by marking a data channel as downgraded. This may be due
+// to defect or transient events (e.g. bug crawling on the sensor)
+type ChannelFlag int
 
-// PurpleAir API paths
 const (
-	URLKEYS    string = "https://api.purpleair.com/v1/keys"
-	URLGROUPS  string = "https://api.purpleair.com/v1/groups"
-	URLMEMBERS string = "https://api.purpleair.com/v1/groups/%d/members"
-	URLSENSORS string = "https://api.purpleair.com/v1/sensors"
+	ChannelFlagNormal  ChannelFlag = 0 // no sensors downgraded
+	ChannelFlagDownA               = 1 // channel A sensors downgraded
+	ChannelFlagDownB               = 2 // channel B sensors downgrade
+	ChannelFlagDownAll             = 3 // both channel A & B sensors downgrade
 )

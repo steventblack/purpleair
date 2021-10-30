@@ -49,7 +49,7 @@ func CheckAPIKey(k string) (KeyType, error) {
 
 	keyType := KeyUnknown
 
-	req, err := http.NewRequest(http.MethodGet, URLKEYS, nil)
+	req, err := http.NewRequest(http.MethodGet, urlKeys, nil)
 	if err != nil {
 		return keyType, err
 	}
@@ -90,7 +90,7 @@ func CreateGroup(g string) (GroupID, error) {
 		return 0, err
 	}
 
-	u, err := url.Parse(URLGROUPS)
+	u, err := url.Parse(urlGroups)
 	if err != nil {
 		return 0, err
 	}
@@ -125,7 +125,7 @@ func CreateGroup(g string) (GroupID, error) {
 // This call requires a key with write permissions to be set prior to calling.
 // An error will be returned on failure, or else nil
 func DeleteGroup(g GroupID) error {
-	u, err := url.Parse(fmt.Sprintf("%s/%d", URLGROUPS, g))
+	u, err := url.Parse(fmt.Sprintf("%s/%d", urlGroups, g))
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func DeleteGroup(g GroupID) error {
 // This call requires a key with read permissions to be set prior to calling.
 // The list of groups will be returned on success, or else an error.
 func ListGroups() ([]Group, error) {
-	u, err := url.Parse(URLGROUPS)
+	u, err := url.Parse(urlGroups)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func ListGroups() ([]Group, error) {
 // This call requires a key with read permissions to be set prior to calling.
 // The list of members will be returned on success, or else an error.
 func GroupDetails(g GroupID) ([]Member, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/%d", URLGROUPS, g))
+	u, err := url.Parse(fmt.Sprintf("%s/%d", urlGroups, g))
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (s SensorID) AddMember(g GroupID, pi ...PrivateInfo) (MemberID, error) {
 // addMember is the private function for handling the common code for member addition.
 // Both the SensorID and SensorIndex versions of AddMember rely on this.
 func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
-	u, err := url.Parse(fmt.Sprintf(URLMEMBERS, g))
+	u, err := url.Parse(fmt.Sprintf(urlMembers, g))
 	if err != nil {
 		return 0, err
 	}
@@ -306,7 +306,7 @@ func addMember(g GroupID, reqJSON []byte) (MemberID, error) {
 // This call requires a key with write permissions to be set prior to calling.
 // On success, nil will be returned or else an error.
 func RemoveMember(m MemberID, g GroupID) error {
-	u, err := url.Parse(fmt.Sprintf(URLMEMBERS+"/%d", g, m))
+	u, err := url.Parse(fmt.Sprintf(urlMembers+"/%d", g, m))
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func RemoveMember(m MemberID, g GroupID) error {
 // On success, the SensorInfo will be returned, or else an error.
 // Note that if a subset of fields is specified, only that data will be returned.
 func MemberData(g GroupID, m MemberID, sp SensorParams) (*SensorInfo, error) {
-	u, err := url.Parse(fmt.Sprintf(URLMEMBERS+"/%d", g, m))
+	u, err := url.Parse(fmt.Sprintf(urlMembers+"/%d", g, m))
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func MemberData(g GroupID, m MemberID, sp SensorParams) (*SensorInfo, error) {
 // On success, the SensorInfo will be returned, or else an error.
 // Note that if a subset of fields is specified, only that data will be returned.
 func SensorData(s SensorIndex, sp SensorParams) (*SensorInfo, error) {
-	u, err := url.Parse(fmt.Sprintf(URLSENSORS+"/%d", s))
+	u, err := url.Parse(fmt.Sprintf(urlSensors+"/%d", s))
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func SensorData(s SensorIndex, sp SensorParams) (*SensorInfo, error) {
 // The return value is a map of key/value pairs for each field element
 // specified indexed by the sensor_index.
 func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
-	u, err := url.Parse(fmt.Sprintf(URLMEMBERS, g))
+	u, err := url.Parse(fmt.Sprintf(urlMembers, g))
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +372,7 @@ func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
 // The return value is a map of key/value pairs for each field element
 // specified indexed by the sensor_index.
 func SensorsData(sp SensorParams) (SensorDataSet, error) {
-	u, err := url.Parse(URLSENSORS)
+	u, err := url.Parse(urlSensors)
 	if err != nil {
 		return nil, err
 	}
