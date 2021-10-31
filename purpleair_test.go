@@ -5,13 +5,20 @@ import (
 	"io/ioutil"
 	"log"
 	"testing"
-	"time"
 )
 
-// Key map for holding the read & write keys for API access
-// Initialized by reading in local JSON file "keys.JSON"
-// Keys are available by requesting from "contact@purpleair.com"
-var km map[string]string
+// Standard test information.
+// Keys are available by requesting from "contact@purpleair.com".
+// Testing requires both the read and write keys.
+// Because there is a highly variable propagation delay in PurpleAir's group and membership
+// APIs, a group should be created prior to testing and a known sensor added to the group.
+type TestInfo struct {
+	Keys      map[string]string `json:"keys"`
+	GroupInfo map[string]int    `json:"groupinfo"`
+	Fields    string            `json:"fields"`
+}
+
+var ti TestInfo
 
 const (
 	TESTGROUP     string      = "testing_group"
@@ -27,7 +34,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	err = json.Unmarshal(f, &km)
+	err = json.Unmarshal(f, &ti)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +43,7 @@ func init() {
 // Suite of tests related to key validation
 func TestKeys(t *testing.T) {
 	// read key check
-	kt, err := CheckAPIKey(km["read"])
+	kt, err := CheckAPIKey(ti.Keys["read"])
 	if err != nil {
 		t.Log("Unable to CheckAPIKey", err)
 		t.Fail()
@@ -47,7 +54,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	// write key check
-	kt, err = CheckAPIKey(km["write"])
+	kt, err = CheckAPIKey(ti.Keys["write"])
 	if err != nil {
 		t.Log("Unable to CheckAPIKey", err)
 		t.Fail()
@@ -69,7 +76,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	// read key set
-	kt, err = SetAPIKey(km["read"])
+	kt, err = SetAPIKey(ti.Keys["read"])
 	if err != nil {
 		t.Log("Unable to SetAPIKey", err)
 		t.Fail()
@@ -80,7 +87,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	// write key set
-	kt, err = SetAPIKey(km["write"])
+	kt, err = SetAPIKey(ti.Keys["write"])
 	if err != nil {
 		t.Log("Unable to SetAPIKey", err)
 		t.Fail()
@@ -106,6 +113,7 @@ func TestKeys(t *testing.T) {
 // includes: creation/deletion, listing, details, and membership (add/remove)
 // Ordering of the tests is important (e.g. you can't delete the group until after you've created it)
 // The PurpleAir API also suffers from internal propagation latency, so there may be race conditions.
+/*
 func TestGroups(t *testing.T) {
 	// create a group
 	// the group id (g) will be used for the other group related calls
@@ -208,6 +216,7 @@ func TestGroups(t *testing.T) {
 		t.Fail()
 	}
 }
+*/
 
 // Suite of tests for retriving sensor info
 func TestSensorInfo(t *testing.T) {
