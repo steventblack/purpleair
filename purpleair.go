@@ -128,8 +128,6 @@ func extractError(r *http.Response) error {
 // paError handles an error response back from the API and returns an error
 func paError(r *http.Response) error {
 	errorResp := struct {
-		V string `json:"api_version"`
-		T int    `json:"time_stamp"`
 		E string `json:"error"`
 		D string `json:"description"`
 	}{}
@@ -143,7 +141,7 @@ func paError(r *http.Response) error {
 	// If there is an error response and description, use both. Otherwise just repor the error.
 	errMsg := errorResp.E
 	if errorResp.D != "" {
-		errMsg = fmt.Sprintf("%s: %s", errorResp.E, errorResp.D)
+		errMsg = fmt.Sprintf("[%s] %s", errorResp.E, errorResp.D)
 	}
 
 	return errors.New(errMsg)
