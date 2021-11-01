@@ -235,3 +235,57 @@ func RemoveMember(m MemberID, g GroupID) error {
 
 	return nil
 }
+
+// MemberData returns the SensorInfo for a member of a group.
+// The SensorParams can restrict the information returned to the named fields.
+// This call requires a key with read permissions to be set prior to calling.
+// On success, the SensorInfo will be returned, or else an error.
+// Note that if a subset of fields is specified, only that data will be returned.
+func MemberData(g GroupID, m MemberID, sp SensorParams) (*SensorInfo, error) {
+	u, err := url.Parse(fmt.Sprintf(urlMembers+"/%d", g, m))
+	if err != nil {
+		return nil, err
+	}
+
+	// check for permitted/required params
+	for k, _ := range sp {
+		switch k {
+		case SensorParamFields:
+		default:
+			return nil, fmt.Errorf("Unexpected sensor param encountered [%s]", k)
+		}
+	}
+
+	return paSensor(u, sp)
+}
+
+// MembersData returns the information requested for the set (or subset)
+// of sensors within the specified Group. The SensorParams must specify
+// the elements requested in the "fields" parameter.
+// The return value is a map of key/value pairs for each field element
+// specified indexed by the sensor_index.
+func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
+	u, err := url.Parse(fmt.Sprintf(urlMembers, g))
+	if err != nil {
+		return nil, err
+	}
+
+	// check for permitted/required params
+	requiredField := false
+	for k, _ := range sp {
+		switch k {
+		case SensorParamFields:
+			requiredField = true
+		case SensorParamLocation, SensorParamReadKeys, SensorParamShowOnly, SensorParamModTime, SensorParamMaxAge:
+		case SensorParamNWLong, SensorParamNWLat, SensorParamSELong, SensorParamSELat:
+		default:
+			return nil, fmt.Errorf("Unexpected sensor param encountered [%s]", k)
+		}
+	}
+
+	if requiredField == false {
+		return nil, fmt.Errorf("Required sensor param not found [%s]", SensorParamFields)
+	}
+
+	return paSensors(u, sp)
+}
