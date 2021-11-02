@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"testing"
 )
 
 // Standard test information.
@@ -12,19 +11,20 @@ import (
 // Testing requires both the read and write keys.
 // Because there is a highly variable propagation delay in PurpleAir's group and membership
 // APIs, a group should be created prior to testing and a known sensor added to the group.
+
+type TestSensorInfo struct {
+	TestSensorIndex  SensorIndex   `json:"testSensorIndex"`
+	TestSensorsIndex []SensorIndex `json:"testSensorsIndex"`
+}
+
 type TestInfo struct {
-	Keys      map[string]string `json:"keys"`
-	GroupInfo map[string]int    `json:"groupinfo"`
-	Fields    string            `json:"fields"`
+	Keys         map[string]string `json:"keys"`
+	GroupInfo    map[string]int    `json:"groupinfo"`
+	SensorInfo   TestSensorInfo    `json:"sensorinfo"`
+	SensorParams map[string]string `json:"sensorparams"`
 }
 
 var ti TestInfo
-
-const (
-	TESTGROUP     string      = "testing_group"
-	TESTSENSORIDX SensorIndex = 118475
-	TESTFIELDS    string      = "sensor_index,name,location_type,hardware,latitude,longitude,rssi,model"
-)
 
 // Initialization of read & write keys used for API access
 // If keys are not available, then it is unable to perform any API tests
@@ -148,64 +148,3 @@ func TestGroups(t *testing.T) {
 	}
 }
 */
-
-// Suite of tests for retriving sensor info
-func TestSensorInfo(t *testing.T) {
-	// test fetching all data for a sensor
-	var mp = make(SensorParams)
-	sd, err := SensorData(TESTSENSORIDX, mp)
-	if err != nil {
-		t.Log("Unable to get sensor data", err)
-		t.Fail()
-	}
-	t.Logf("SensorData (all):\n%v+\n", sd)
-
-	// test fetching selected data for a sensor
-	//	fp := SensorFields{Fields: TESTFIELDS}
-	mp[SensorParamFields] = TESTFIELDS
-	sd, err = SensorData(TESTSENSORIDX, mp)
-	if err != nil {
-		t.Log("Unable to get sensor data with fields", err)
-		t.Fail()
-	}
-	t.Logf("SensorData:\n%v+\n", sd)
-}
-
-func TestSensorParams(t *testing.T) {
-	/*
-		// testing param block
-		var p = make(SensorParams)
-		p[SensorParamFields] = "sensor_index,name,latitude,longitude,location_type,model"
-		p[SensorParamLocation] = OUTSIDE
-		p[SensorParamNWLong] = 123.456
-
-		_, err := processParams(p)
-		if err != nil {
-			t.Log("Unable to process sensor params", err)
-			t.Fail()
-		}
-
-		// setup a params block without the required fields
-		var pf = make(SensorParams)
-		p[SensorParamLocation] = OUTSIDE
-		p[SensorParamNWLong] = 123.456
-
-		_, err = processParams(pf)
-		if err == nil {
-			t.Log("Missing error for missing required 'fields' param")
-			t.Fail()
-		}
-
-		var pb = make(SensorParams)
-		p[SensorParamFields] = "sensor_index,name,latitude,longitude,location_type,model"
-		p[SensorParamLocation] = OUTSIDE
-		p[SensorParamNWLong] = 123.456
-		p["bogus"] = "this invalid key better throw an error"
-
-		_, err = processParams(pb)
-		if err == nil {
-			t.Log("Missing error for passing invalid parameter key")
-			t.Fail()
-		}
-	*/
-}
