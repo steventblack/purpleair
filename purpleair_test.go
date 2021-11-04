@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"testing"
+	"time"
 )
 
 // Standard test information.
@@ -22,6 +24,7 @@ type TestInfo struct {
 	GroupInfo    map[string]int    `json:"groupinfo"`
 	SensorInfo   TestSensorInfo    `json:"sensorinfo"`
 	SensorParams map[string]string `json:"sensorparams"`
+	initialized  bool
 }
 
 var ti TestInfo
@@ -29,7 +32,15 @@ var ti TestInfo
 // Initialization of read & write keys used for API access
 // If keys are not available, then it is unable to perform any API tests
 func init() {
-	f, err := ioutil.ReadFile("./keys.JSON")
+	initTestInfo()
+}
+
+func initTestInfo() {
+	if ti.initialized == true {
+		return
+	}
+
+	f, err := ioutil.ReadFile("./purpleair_test.conf")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,6 +49,24 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	ti.initialized = true
+}
+
+func TestSensorParams(t *testing.T) {
+	fields := []string{"sensor_index", "location_type"}
+	readKey := "secret_key"
+	var loc Location = LocOutside
+	show := []SensorIndex{12345, 67890}
+	modTime := time.Now()
+	coord := 123.456
+
+	paAddSensorParam(SensorParamFields, fields)
+	paAddSensorParam(SensorParamLocation, loc)
+	paAddSensorParam(SensorParamModTime, modTime)
+	paAddSensorParam(SensorParamNWLong, coord)
+	paAddSensorParam(SensorParamReadKey, readKey)
+	paAddSensorParam(SensorParamShowOnly, show)
 }
 
 // Suite of tests for Group usage

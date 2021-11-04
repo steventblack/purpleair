@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+func init() {
+	initTestInfo()
+}
+
 func TestUnmarshalSensorStats(t *testing.T) {
 	var s SensorStats
 	d := []byte(`{ "pm2.5": 123.1, 

@@ -1,22 +1,11 @@
 package purpleair
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"log"
 	"testing"
 )
 
 func init() {
-	f, err := ioutil.ReadFile("./keys.JSON")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = json.Unmarshal(f, &ti)
-	if err != nil {
-		log.Fatal(err)
-	}
+	initTestInfo()
 }
 
 func TestCheckAPIKey(t *testing.T) {

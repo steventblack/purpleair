@@ -1,11 +1,12 @@
 package purpleair
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
 	"testing"
 )
+
+func init() {
+	initTestInfo()
+}
 
 func TestSensorData(t *testing.T) {
 	// Test with no params specified
@@ -34,10 +35,9 @@ func TestSensorData(t *testing.T) {
 }
 
 func TestSensorsData(t *testing.T) {
-
 	// test without the required fields param
 	var sp = make(SensorParams)
-	sp[SensorParamShowOnly] = fmt.Sprintf("%d", ti.SensorInfo.TestSensorIndex)
+	sp[SensorParamShowOnly] = ti.SensorInfo.TestSensorsIndex
 	_, err := SensorsData(sp)
 	if err == nil {
 		t.Log(t.Name(), err)
@@ -53,12 +53,7 @@ func TestSensorsData(t *testing.T) {
 	}
 
 	// test with more than one sensor index specified
-	var si []string
-	for _, i := range ti.SensorInfo.TestSensorsIndex {
-		si = append(si, strconv.Itoa(int(i)))
-	}
-
-	sp[SensorParamShowOnly] = strings.Join(si, ",")
+	sp[SensorParamShowOnly] = ti.SensorInfo.TestSensorsIndex
 	_, err = SensorsData(sp)
 	if err != nil {
 		t.Log(t.Name(), err)
