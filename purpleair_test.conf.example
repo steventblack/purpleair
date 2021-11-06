@@ -1,0 +1,30 @@
+{
+  "keys": {
+    "read": "change_to_your_read_key_here",
+    "write": "change_to_your_write_key_here"
+  },
+  "groupinfo": {
+    "testGroupID": change_to_a_groupID_you_created_here,
+    "testSensorIndex": 118475,
+    "testSensorMemberID": change_to_a_memberID_for_your_group_here
+  },
+  "sensorinfo": {
+    "testSensorIndex": 118475,
+    "testSensorsIndex": [
+      118475,
+      19391
+    ]
+  },
+  "sensorparams": {
+    "fields": [
+      "sensor_index",
+      "name",
+      "location_type",
+      "hardware",
+      "latitude",
+      "longitude",
+      "rssi",
+      "model"
+    ]
+  }
+}
