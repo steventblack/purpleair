@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // doRequest creates and executes the http request for the PurpleAir API.
@@ -174,6 +177,61 @@ func paSensors(u *url.URL, sp SensorParams) (SensorDataSet, error) {
 	return sd, nil
 }
 
+// paAddSensorParams is a helper function used to properly create the
+// SensorParams block used by the various calls for retreiving sensor information.
+// Using a simple structure doesn't work especially well as the default initialization
+// values in Go may lead to unintended specifications. (e.g. the Outside Location maps
+// to a 0 value, but a query independent of Location is expressed by the absence of
+// the parameter.) This suggests the use of a map[string]interface{} data type, but
+// then it invites inappropriate typing of the parameter values. The solution chosen
+// is to use a helper function that is able to validate the type choice for each sensor
+// param and convert it from a Go type to the format expected by the API.
+// Usage is similar to the append() function in that repeated calls can add
+// (or replace) elements to the SensorParams struct.
+func paAddSensorParam(sp SensorParams, p SensorParam, i interface{}) (SensorParams, error) {
+	switch v := i.(type) {
+	case string:
+		if p != SensorParamReadKey {
+			return sp, fmt.Errorf("Invalid type for parameter [param=%s, type=%T]", p, v)
+		}
+		sp[p] = i.(string)
+	case []string:
+		if p != SensorParamFields && p != SensorParamReadKeys {
+			return sp, fmt.Errorf("Invalid type for parameter [param=%s, type=%T]", p, v)
+		}
+		sp[p] = strings.Join(i.([]string), ",")
+	case Location:
+		if p != SensorParamLocation {
+			return sp, fmt.Errorf("Invalid type for parameter [param=%s, type=%T]", p, v)
+		}
+		sp[p] = i.(Location)
+	case time.Time:
+		if p != SensorParamModTime && p != SensorParamMaxAge {
+			return sp, fmt.Errorf("Invalid type for parameter [param=%s, type=%T]", p, v)
+		}
+		sp[p] = i.(time.Time).Unix()
+	case float64:
+		// TODO: convert to a better typed solution (Box, Point)
+		if p != SensorParamNWLong && p != SensorParamNWLat && p != SensorParamSELong && p != SensorParamSELat {
+			return sp, fmt.Errorf("Invalid type for parameter [param=%s, type=%T]", p, v)
+		}
+		sp[p] = i.(float64)
+	case []SensorIndex:
+		if p != SensorParamShowOnly {
+			return sp, fmt.Errorf("Invalid type for parameter [param=%s, type=%T]", p, v)
+		}
+		var si []string
+		for _, i := range i.([]SensorIndex) {
+			si = append(si, strconv.Itoa(int(i)))
+		}
+		sp[p] = strings.Join(si, ",")
+	default:
+		return sp, fmt.Errorf("Unhandled type for parameter [param=%s, type=%T]", p, v)
+	}
+
+	return sp, nil
+}
+
 // paSensorParams processes the parameters passed in for sensor information
 // calls and converts them into url query parameters (properly encoded).
 // This call is used by all single and multi-sensor information calls
@@ -185,7 +243,7 @@ func paSensorParams(u *url.URL, sp SensorParams) error {
 
 	for k, v := range sp {
 		switch k {
-		case SensorParamFields, SensorParamReadKeys, SensorParamShowOnly:
+		case SensorParamFields, SensorParamShowOnly, SensorParamReadKeys:
 			q.Add(string(k), fmt.Sprintf("%s", v))
 		case SensorParamLocation, SensorParamModTime, SensorParamMaxAge:
 			q.Add(string(k), fmt.Sprintf("%d", v))

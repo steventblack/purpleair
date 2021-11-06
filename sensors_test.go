@@ -18,7 +18,7 @@ func TestSensorData(t *testing.T) {
 	}
 
 	// Test with a fields param
-	sp[SensorParamFields] = ti.SensorParams["fields"]
+	sp, err = paAddSensorParam(sp, SensorParamFields, ti.SensorParams["fields"])
 	_, err = SensorData(ti.SensorInfo.TestSensorIndex, sp)
 	if err != nil {
 		t.Log(t.Name(), err)
@@ -26,7 +26,7 @@ func TestSensorData(t *testing.T) {
 	}
 
 	// Test with an illegal param
-	sp[SensorParamLocation] = LocOutside
+	sp, err = paAddSensorParam(sp, SensorParamLocation, LocOutside)
 	_, err = SensorData(ti.SensorInfo.TestSensorIndex, sp)
 	if err == nil {
 		t.Log(t.Name(), err)
@@ -37,15 +37,15 @@ func TestSensorData(t *testing.T) {
 func TestSensorsData(t *testing.T) {
 	// test without the required fields param
 	var sp = make(SensorParams)
-	sp[SensorParamShowOnly] = ti.SensorInfo.TestSensorsIndex
-	_, err := SensorsData(sp)
+	sp, err := paAddSensorParam(sp, SensorParamShowOnly, ti.SensorInfo.TestSensorsIndex)
+	_, err = SensorsData(sp)
 	if err == nil {
 		t.Log(t.Name(), err)
 		t.Fail()
 	}
 
 	// test with the required fields param
-	sp[SensorParamFields] = ti.SensorParams["fields"]
+	sp, err = paAddSensorParam(sp, SensorParamFields, ti.SensorParams["fields"])
 	_, err = SensorsData(sp)
 	if err != nil {
 		t.Log(t.Name(), err)
@@ -53,10 +53,12 @@ func TestSensorsData(t *testing.T) {
 	}
 
 	// test with more than one sensor index specified
-	sp[SensorParamShowOnly] = ti.SensorInfo.TestSensorsIndex
-	_, err = SensorsData(sp)
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
+	/*
+		sp[SensorParamShowOnly] = ti.SensorInfo.TestSensorsIndex
+		_, err = SensorsData(sp)
+		if err != nil {
+			t.Log(t.Name(), err)
+			t.Fail()
+		}
+	*/
 }

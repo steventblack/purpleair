@@ -20,10 +20,10 @@ type TestSensorInfo struct {
 }
 
 type TestInfo struct {
-	Keys         map[string]string `json:"keys"`
-	GroupInfo    map[string]int    `json:"groupinfo"`
-	SensorInfo   TestSensorInfo    `json:"sensorinfo"`
-	SensorParams map[string]string `json:"sensorparams"`
+	Keys         map[string]string   `json:"keys"`
+	GroupInfo    map[string]int      `json:"groupinfo"`
+	SensorInfo   TestSensorInfo      `json:"sensorinfo"`
+	SensorParams map[string][]string `json:"sensorparams"`
 	initialized  bool
 }
 
@@ -54,19 +54,49 @@ func initTestInfo() {
 }
 
 func TestSensorParams(t *testing.T) {
-	fields := []string{"sensor_index", "location_type"}
 	readKey := "secret_key"
 	var loc Location = LocOutside
-	show := []SensorIndex{12345, 67890}
 	modTime := time.Now()
 	coord := 123.456
 
-	paAddSensorParam(SensorParamFields, fields)
-	paAddSensorParam(SensorParamLocation, loc)
-	paAddSensorParam(SensorParamModTime, modTime)
-	paAddSensorParam(SensorParamNWLong, coord)
-	paAddSensorParam(SensorParamReadKey, readKey)
-	paAddSensorParam(SensorParamShowOnly, show)
+	sp := make(SensorParams)
+	sp, err := paAddSensorParam(sp, SensorParamFields, ti.SensorParams["fields"])
+	if err != nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
+	sp, err = paAddSensorParam(sp, SensorParamLocation, loc)
+	if err != nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
+
+	// try to add a bad type for the param
+	sp, err = paAddSensorParam(sp, SensorParamFields, loc)
+	if err == nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
+	sp, err = paAddSensorParam(sp, SensorParamModTime, modTime)
+	if err != nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
+	sp, err = paAddSensorParam(sp, SensorParamNWLong, coord)
+	if err != nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
+	sp, err = paAddSensorParam(sp, SensorParamReadKey, readKey)
+	if err != nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
+	sp, err = paAddSensorParam(sp, SensorParamShowOnly, ti.SensorInfo.TestSensorsIndex)
+	if err != nil {
+		t.Log(t.Name(), err)
+		t.Fail()
+	}
 }
 
 // Suite of tests for Group usage
