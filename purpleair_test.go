@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"testing"
-	"time"
 )
 
 // Standard test information.
@@ -53,6 +51,7 @@ func initTestInfo() {
 	ti.initialized = true
 }
 
+/*
 func TestSensorParams(t *testing.T) {
 	readKey := "secret_key"
 	var loc Location = LocOutside
@@ -60,6 +59,7 @@ func TestSensorParams(t *testing.T) {
 	coord := 123.456
 
 	sp := make(SensorParams)
+
 	sp, err := paAddSensorParam(sp, SensorParamFields, ti.SensorParams["fields"])
 	if err != nil {
 		t.Log(t.Name(), err)
@@ -98,6 +98,7 @@ func TestSensorParams(t *testing.T) {
 		t.Fail()
 	}
 }
+*/
 
 // Suite of tests for Group usage
 // includes: creation/deletion, listing, details, and membership (add/remove)

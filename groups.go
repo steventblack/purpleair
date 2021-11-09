@@ -250,7 +250,7 @@ func MemberData(g GroupID, m MemberID, sp SensorParams) (*SensorInfo, error) {
 	// check for permitted/required params
 	for k, _ := range sp {
 		switch k {
-		case SensorParamFields:
+		case paramFields:
 		default:
 			return nil, fmt.Errorf("Unexpected sensor param encountered [%s]", k)
 		}
@@ -274,17 +274,17 @@ func MembersData(g GroupID, sp SensorParams) (SensorDataSet, error) {
 	requiredField := false
 	for k, _ := range sp {
 		switch k {
-		case SensorParamFields:
+		case paramFields:
 			requiredField = true
-		case SensorParamLocation, SensorParamReadKeys, SensorParamShowOnly, SensorParamModTime, SensorParamMaxAge:
-		case SensorParamNWLong, SensorParamNWLat, SensorParamSELong, SensorParamSELat:
+		case paramLocation, paramReadKeys, paramShowOnly, paramModTime, paramMaxAge:
+		case paramNWLong, paramNWLat, paramSELong, paramSELat:
 		default:
 			return nil, fmt.Errorf("Unexpected sensor param encountered [%s]", k)
 		}
 	}
 
 	if requiredField == false {
-		return nil, fmt.Errorf("Required sensor param not found [%s]", SensorParamFields)
+		return nil, fmt.Errorf("Required sensor param not found [%s]", paramFields)
 	}
 
 	return paSensors(u, sp)

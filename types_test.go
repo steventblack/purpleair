@@ -123,3 +123,12 @@ func TestUnmarshalMember(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestAddParam(t *testing.T) {
+	sp := make(SensorParams)
+	f := ParamFields{Value: ti.SensorParams["fields"]}
+	sp = f.AddParam(sp)
+
+	loc := ParamLocation{Value: LocOutside}
+	sp = loc.AddParam(sp)
+}

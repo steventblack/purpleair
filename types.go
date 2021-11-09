@@ -2,6 +2,8 @@ package purpleair
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -301,28 +303,129 @@ type DataField string
 // of Go's default values, only explicit params pertinent for the query
 // should be specified. (i.e. If a key isn't relevant for the query, then
 // don't include the key in the map.)
-type SensorParams map[SensorParam]interface{}
+type SensorParams map[string]interface{}
 type SensorDataRow map[DataField]interface{}
 type SensorDataSet map[int]SensorDataRow
 
-// Query parameters that can refine the selection or data fields returned
-// from single or multi-sensor requests.
-// Retyped string for better type-checking.
-type SensorParam string
-
 const (
-	SensorParamFields   SensorParam = "fields"
-	SensorParamLocation             = "location_type"
-	SensorParamReadKey              = "read_key"  // used for single-sensor calls
-	SensorParamReadKeys             = "read_keys" // used for multi-sensor calls
-	SensorParamShowOnly             = "show_only"
-	SensorParamModTime              = "modified_since"
-	SensorParamMaxAge               = "max_age"
-	SensorParamNWLong               = "nwlng"
-	SensorParamNWLat                = "nwlat"
-	SensorParamSELong               = "selng"
-	SensorParamSELat                = "selat"
+	paramFields   string = "fields"
+	paramLocation string = "location_type"
+	paramReadKey  string = "read_key"
+	paramReadKeys string = "read_keys"
+	paramShowOnly string = "show_only"
+	paramModTime  string = "modified_since"
+	paramMaxAge   string = "max_age"
+	paramNWLong   string = "nwlng"
+	paramNWLat    string = "nwlat"
+	paramSELong   string = "selng"
+	paramSELat    string = "selat"
 )
+
+// Helper types for binding the parameters used for querying sensor info
+// to the different types for their values. All implement a "AddParam" interface
+// allowing a common mechanism for safely adding query parameters to the call.
+type ParamFields struct {
+	Value []string
+}
+
+type ParamLocation struct {
+	Value Location
+}
+
+type ParamReadKey struct {
+	Value string
+}
+
+type ParamReadKeys struct {
+	Value []string
+}
+
+type ParamShowOnly struct {
+	Value []SensorIndex
+}
+
+type ParamModTime struct {
+	Value time.Time
+}
+
+type ParamMaxAge struct {
+	Value time.Time
+}
+
+type ParamBoundingBox struct {
+	NWLong float64
+	NWLat  float64
+	SELong float64
+	SELat  float64
+}
+
+// Interface for adding parameters to the SensorParams map.
+// Because the SensorParams can take a variety of keys and value types, an interface
+// approach allows the necessary flexibility. Implementing a AddParam func for
+// each kind of parameter provides better typing control and clarity.
+type AddParam interface {
+	AddParam(sp SensorParams) SensorParams
+}
+
+// Interface implementations for each type of parameter that may be added
+// to the SensorParams map. Values may be transformed from a native Go type
+// to the necessary formats required by the PurpleAir API. (e.g.
+// SensorIndexes transformed to a string of comma-delimited value, or the
+// BoundingBox transformed into the four coordinate parameters.
+func (p ParamFields) AddParam(sp SensorParams) SensorParams {
+	sp[paramFields] = strings.Join(p.Value, ",")
+
+	return sp
+}
+
+func (p ParamLocation) AddParam(sp SensorParams) SensorParams {
+	sp[paramLocation] = p.Value
+
+	return sp
+}
+
+func (p ParamReadKey) AddParam(sp SensorParams) SensorParams {
+	sp[paramReadKey] = p.Value
+
+	return sp
+}
+
+func (p ParamReadKeys) AddParam(sp SensorParams) SensorParams {
+	sp[paramReadKeys] = strings.Join(p.Value, ",")
+
+	return sp
+}
+
+func (p ParamShowOnly) AddParam(sp SensorParams) SensorParams {
+	var s []string
+	for _, i := range p.Value {
+		s = append(s, strconv.Itoa(int(i)))
+	}
+	sp[paramShowOnly] = strings.Join(s, ",")
+
+	return sp
+}
+
+func (p ParamModTime) AddParam(sp SensorParams) SensorParams {
+	sp[paramModTime] = p.Value.Unix()
+
+	return sp
+}
+
+func (p ParamMaxAge) AddParam(sp SensorParams) SensorParams {
+	sp[paramMaxAge] = p.Value.Unix()
+
+	return sp
+}
+
+func (p ParamBoundingBox) AddParam(sp SensorParams) SensorParams {
+	sp[paramNWLong] = p.NWLong
+	sp[paramNWLat] = p.NWLat
+	sp[paramSELong] = p.SELong
+	sp[paramSELat] = p.SELat
+
+	return sp
+}
 
 // Collection of averaged statistics for the sensor channel.
 // Available as part of the SensorInfo information.
