@@ -303,7 +303,7 @@ type DataField string
 // of Go's default values, only explicit params pertinent for the query
 // should be specified. (i.e. If a key isn't relevant for the query, then
 // don't include the key in the map.)
-type SensorParams map[string]interface{}
+type SensorParams map[string]string
 type SensorDataRow map[DataField]interface{}
 type SensorDataSet map[int]SensorDataRow
 
@@ -372,6 +372,8 @@ type AddParam interface {
 // to the necessary formats required by the PurpleAir API. (e.g.
 // SensorIndexes transformed to a string of comma-delimited value, or the
 // BoundingBox transformed into the four coordinate parameters.
+// Note that AddParam consistently converts the native formats to a string
+// version that is suitable for passing in to PurpleAir's API.
 func (p ParamFields) AddParam(sp SensorParams) SensorParams {
 	sp[paramFields] = strings.Join(p.Value, ",")
 
@@ -379,7 +381,7 @@ func (p ParamFields) AddParam(sp SensorParams) SensorParams {
 }
 
 func (p ParamLocation) AddParam(sp SensorParams) SensorParams {
-	sp[paramLocation] = p.Value
+	sp[paramLocation] = strconv.Itoa(int(p.Value))
 
 	return sp
 }
@@ -407,22 +409,22 @@ func (p ParamShowOnly) AddParam(sp SensorParams) SensorParams {
 }
 
 func (p ParamModTime) AddParam(sp SensorParams) SensorParams {
-	sp[paramModTime] = p.Value.Unix()
+	sp[paramModTime] = strconv.FormatInt(p.Value.Unix(), 10)
 
 	return sp
 }
 
 func (p ParamMaxAge) AddParam(sp SensorParams) SensorParams {
-	sp[paramMaxAge] = p.Value.Unix()
+	sp[paramMaxAge] = strconv.FormatInt(p.Value.Unix(), 10)
 
 	return sp
 }
 
 func (p ParamBoundingBox) AddParam(sp SensorParams) SensorParams {
-	sp[paramNWLong] = p.NWLong
-	sp[paramNWLat] = p.NWLat
-	sp[paramSELong] = p.SELong
-	sp[paramSELat] = p.SELat
+	sp[paramNWLong] = strconv.FormatFloat(p.NWLong, 'f', -1, 64)
+	sp[paramNWLat] = strconv.FormatFloat(p.NWLat, 'f', -1, 64)
+	sp[paramSELong] = strconv.FormatFloat(p.SELong, 'f', -1, 64)
+	sp[paramSELat] = strconv.FormatFloat(p.SELat, 'f', -1, 64)
 
 	return sp
 }

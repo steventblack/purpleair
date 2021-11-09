@@ -51,55 +51,6 @@ func initTestInfo() {
 	ti.initialized = true
 }
 
-/*
-func TestSensorParams(t *testing.T) {
-	readKey := "secret_key"
-	var loc Location = LocOutside
-	modTime := time.Now()
-	coord := 123.456
-
-	sp := make(SensorParams)
-
-	sp, err := paAddSensorParam(sp, SensorParamFields, ti.SensorParams["fields"])
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-	sp, err = paAddSensorParam(sp, SensorParamLocation, loc)
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-
-	// try to add a bad type for the param
-	sp, err = paAddSensorParam(sp, SensorParamFields, loc)
-	if err == nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-	sp, err = paAddSensorParam(sp, SensorParamModTime, modTime)
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-	sp, err = paAddSensorParam(sp, SensorParamNWLong, coord)
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-	sp, err = paAddSensorParam(sp, SensorParamReadKey, readKey)
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-	sp, err = paAddSensorParam(sp, SensorParamShowOnly, ti.SensorInfo.TestSensorsIndex)
-	if err != nil {
-		t.Log(t.Name(), err)
-		t.Fail()
-	}
-}
-*/
-
 // Suite of tests for Group usage
 // includes: creation/deletion, listing, details, and membership (add/remove)
 // Ordering of the tests is important (e.g. you can't delete the group until after you've created it)

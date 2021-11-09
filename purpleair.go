@@ -74,10 +74,7 @@ func paError(r *http.Response) error {
 // Not all fields may be filled out or valid depending on the SensorParams
 // specified and hardware capabilities.
 func paSensor(u *url.URL, sp SensorParams) (*SensorInfo, error) {
-	err := paSensorParams(u, sp)
-	if err != nil {
-		return nil, err
-	}
+	paSensorParams(u, sp)
 
 	r, err := doRequest(http.MethodGet, u, nil)
 	if err != nil {
@@ -109,10 +106,7 @@ func paSensor(u *url.URL, sp SensorParams) (*SensorInfo, error) {
 // the specified fields and their values in a map indexed by the
 // the SensorIndex value.
 func paSensors(u *url.URL, sp SensorParams) (SensorDataSet, error) {
-	err := paSensorParams(u, sp)
-	if err != nil {
-		return nil, err
-	}
+	paSensorParams(u, sp)
 
 	r, err := doRequest(http.MethodGet, u, nil)
 	if err != nil {
@@ -180,23 +174,12 @@ func paSensors(u *url.URL, sp SensorParams) (SensorDataSet, error) {
 // although the permitted parameters vary by call. Each call should
 // filter the parameters and pass only legal ones before passing in
 // the SensorParams to the common code.
-func paSensorParams(u *url.URL, sp SensorParams) error {
+func paSensorParams(u *url.URL, sp SensorParams) {
 	q := u.Query()
 
 	for k, v := range sp {
-		switch k {
-		case paramFields, paramShowOnly, paramReadKey, paramReadKeys:
-			q.Add(string(k), fmt.Sprintf("%s", v))
-		case paramLocation, paramModTime, paramMaxAge:
-			q.Add(string(k), fmt.Sprintf("%d", v))
-		case paramNWLong, paramNWLat, paramSELong, paramSELat:
-			q.Add(string(k), fmt.Sprintf("%f", v))
-		default:
-			return fmt.Errorf("Unexpected sensor param specified [%s]", k)
-		}
+		q.Add(k, v)
 	}
 
 	u.RawQuery = q.Encode()
-
-	return nil
 }
